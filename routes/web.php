@@ -20,6 +20,8 @@ use App\Http\Controllers\Admin\UnitOfMeasureController;
 use App\Http\Controllers\Admin\TaxGroupController;
 use App\Http\Controllers\Admin\EquipmentController;
 use App\Http\Controllers\Admin\PermissionTemplateController;
+use App\Http\Controllers\Admin\CompanyController;
+use App\Http\Controllers\Admin\ItemPackageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -252,6 +254,21 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::post('/', [PermissionTemplateController::class, 'store'])->name('store');
         Route::put('/{permission}', [PermissionTemplateController::class, 'update'])->name('update');
         Route::delete('/{permission}', [PermissionTemplateController::class, 'destroy'])->name('destroy');
+    });
+
+    // Company Settings
+    Route::prefix('company')->name('company.')->group(function () {
+        Route::get('/', [CompanyController::class, 'index'])->name('index');
+        Route::post('/profile', [CompanyController::class, 'updateCompany'])->name('update');
+        Route::post('/smtp', [CompanyController::class, 'updateSmtp'])->name('smtp');
+    });
+
+    // Item Packages
+    Route::prefix('packages')->name('packages.')->group(function () {
+        Route::get('/', [ItemPackageController::class, 'index'])->name('index');
+        Route::post('/', [ItemPackageController::class, 'store'])->name('store');
+        Route::put('/{package}', [ItemPackageController::class, 'update'])->name('update');
+        Route::delete('/{package}', [ItemPackageController::class, 'destroy'])->name('destroy');
     });
 });
 

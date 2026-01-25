@@ -154,6 +154,20 @@
                 </a>
             </li>
 
+            <li class="side-nav-item">
+                <a href="{{ route('admin.packages.index') }}" class="side-nav-link">
+                    <i class="uil-box"></i>
+                    <span> Packages </span>
+                </a>
+            </li>
+
+            <li class="side-nav-item">
+                <a href="{{ route('admin.company.index') }}" class="side-nav-link">
+                    <i class="uil-building"></i>
+                    <span> Company </span>
+                </a>
+            </li>
+
             {{-- <li class="side-nav-item">
                 <a data-bs-toggle="collapse" href="#sidebarEmail" aria-expanded="false" aria-controls="sidebarEmail" class="side-nav-link">
                     <i class="uil-envelope"></i>
