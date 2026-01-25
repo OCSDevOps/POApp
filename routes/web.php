@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\PoTemplateController;
 use App\Http\Controllers\Admin\SupplierCatalogController;
 use App\Http\Controllers\Admin\ProcoreController;
 use App\Http\Controllers\Admin\CostCodeController;
+use App\Http\Controllers\Admin\UnitOfMeasureController;
 
 /*
 |--------------------------------------------------------------------------
@@ -216,6 +217,14 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::post('/', [CostCodeController::class, 'store'])->name('store');
         Route::put('/{costcode}', [CostCodeController::class, 'update'])->name('update');
         Route::delete('/{costcode}', [CostCodeController::class, 'destroy'])->name('destroy');
+    });
+
+    // Units of Measure
+    Route::prefix('uom')->name('uom.')->group(function () {
+        Route::get('/', [UnitOfMeasureController::class, 'index'])->name('index');
+        Route::post('/', [UnitOfMeasureController::class, 'store'])->name('store');
+        Route::put('/{uom}', [UnitOfMeasureController::class, 'update'])->name('update');
+        Route::delete('/{uom}', [UnitOfMeasureController::class, 'destroy'])->name('destroy');
     });
 });
 
