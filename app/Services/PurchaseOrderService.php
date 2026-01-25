@@ -17,6 +17,8 @@ use App\Models\RfqQuote;
 use App\Models\RfqSupplier;
 use App\Models\Supplier;
 use App\Models\SupplierCatalog;
+use App\Models\User;
+use App\Notifications\BackorderNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -455,11 +457,53 @@ class PurchaseOrderService
             $po->porder_delivery_status = 1; // Fully received
         } elseif ($partiallyReceived) {
             $po->porder_delivery_status = 2; // Partially received
+            $this->notifyBackorder($po, $poItems);
         } else {
             $po->porder_delivery_status = 0; // Not received
         }
 
         $po->save();
+    }
+
+    /**
+     * Notify admins about backorder items for a PO.
+     */
+    protected function notifyBackorder($po, $poItems)
+    {
+        $remaining = [];
+
+        foreach ($poItems as $poItem) {
+            $receivedQty = ReceiveOrderItem::whereHas('receiveOrder', function ($q) use ($po) {
+                $q->where('rorder_porder_ms', $po->porder_id);
+            })
+            ->where('ro_detail_item', $poItem->po_detail_item)
+            ->where('ro_detail_status', 1)
+            ->sum('ro_detail_quantity');
+
+            $pending = max($poItem->po_detail_quantity - $receivedQty, 0);
+            if ($pending > 0) {
+                $remaining[] = [
+                    'item_code' => $poItem->po_detail_item,
+                    'pending_qty' => $pending,
+                ];
+            }
+        }
+
+        if (empty($remaining)) {
+            return;
+        }
+
+        $context = [
+            'po_no' => $po->porder_no,
+            'project' => optional($po->project)->proj_name ?? '',
+            'supplier' => optional($po->supplier)->sup_name ?? '',
+            'remaining_items' => $remaining,
+        ];
+
+        $admins = User::where('u_type', 1)->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new BackorderNotification($context));
+        }
     }
 
     // ==========================================
