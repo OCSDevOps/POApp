@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\ProcoreController;
 use App\Http\Controllers\Admin\CostCodeController;
 use App\Http\Controllers\Admin\UnitOfMeasureController;
 use App\Http\Controllers\Admin\TaxGroupController;
+use App\Http\Controllers\Admin\EquipmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -234,6 +235,14 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::post('/', [TaxGroupController::class, 'store'])->name('store');
         Route::put('/{taxgroup}', [TaxGroupController::class, 'update'])->name('update');
         Route::delete('/{taxgroup}', [TaxGroupController::class, 'destroy'])->name('destroy');
+    });
+
+    // Equipment
+    Route::prefix('equipment')->name('equipment.')->group(function () {
+        Route::get('/', [EquipmentController::class, 'index'])->name('index');
+        Route::post('/', [EquipmentController::class, 'store'])->name('store');
+        Route::put('/{equipment}', [EquipmentController::class, 'update'])->name('update');
+        Route::delete('/{equipment}', [EquipmentController::class, 'destroy'])->name('destroy');
     });
 });
 

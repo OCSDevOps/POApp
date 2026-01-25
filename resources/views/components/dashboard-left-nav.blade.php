@@ -140,6 +140,13 @@
                 </a>
             </li>
 
+            <li class="side-nav-item">
+                <a href="{{ route('admin.equipment.index') }}" class="side-nav-link">
+                    <i class="uil-truck"></i>
+                    <span> Equipment </span>
+                </a>
+            </li>
+
             {{-- <li class="side-nav-item">
                 <a data-bs-toggle="collapse" href="#sidebarEmail" aria-expanded="false" aria-controls="sidebarEmail" class="side-nav-link">
                     <i class="uil-envelope"></i>

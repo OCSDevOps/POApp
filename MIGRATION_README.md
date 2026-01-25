@@ -32,6 +32,7 @@ The project had both CodeIgniter and Laravel frameworks coexisting. The migratio
 - [`app/Http/Controllers/Admin/CostCodeController.php`](app/Http/Controllers/Admin/CostCodeController.php) - Cost code master data (CRUD with lock/unlock via status)
 - [`app/Http/Controllers/Admin/UnitOfMeasureController.php`](app/Http/Controllers/Admin/UnitOfMeasureController.php) - Unit of measure master data
 - [`app/Http/Controllers/Admin/TaxGroupController.php`](app/Http/Controllers/Admin/TaxGroupController.php) - Tax group master data
+- [`app/Http/Controllers/Admin/EquipmentController.php`](app/Http/Controllers/Admin/EquipmentController.php) - Equipment master data
 
 ### Services Created
 - [`app/Services/ProcoreService.php`](app/Services/ProcoreService.php) - Procore API integration
@@ -43,6 +44,7 @@ The project had both CodeIgniter and Laravel frameworks coexisting. The migratio
 - [`resources/views/admin/costcodes/index.blade.php`](resources/views/admin/costcodes/index.blade.php) - Cost code management UI
 - [`resources/views/admin/uom/index.blade.php`](resources/views/admin/uom/index.blade.php) - Unit of measure management UI
 - [`resources/views/admin/taxgroups/index.blade.php`](resources/views/admin/taxgroups/index.blade.php) - Tax group management UI
+- [`resources/views/admin/equipment/index.blade.php`](resources/views/admin/equipment/index.blade.php) - Equipment management UI
 
 ### Routes Updated
 - [`routes/web.php`](routes/web.php) - All admin routes with proper naming conventions
