@@ -133,6 +133,13 @@
                 </a>
             </li>
 
+            <li class="side-nav-item">
+                <a href="{{ route('admin.taxgroups.index') }}" class="side-nav-link">
+                    <i class="uil-percentage"></i>
+                    <span> Tax Groups </span>
+                </a>
+            </li>
+
             {{-- <li class="side-nav-item">
                 <a data-bs-toggle="collapse" href="#sidebarEmail" aria-expanded="false" aria-controls="sidebarEmail" class="side-nav-link">
                     <i class="uil-envelope"></i>
