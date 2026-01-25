@@ -20,6 +20,8 @@ class CostCode extends Model
         'cc_status',
         'cc_created_by',
         'cc_created_at',
+        'cc_modifyby',
+        'cc_modifydate',
     ];
 
     /**

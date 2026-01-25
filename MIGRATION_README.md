@@ -29,6 +29,7 @@ The project had both CodeIgniter and Laravel frameworks coexisting. The migratio
 - [`app/Http/Controllers/Admin/PurchaseOrderController.php`](app/Http/Controllers/Admin/PurchaseOrderController.php) - Full CRUD for purchase orders
 - [`app/Http/Controllers/Admin/ProjectController.php`](app/Http/Controllers/Admin/ProjectController.php) - Project management
 - [`app/Http/Controllers/Admin/SupplierController.php`](app/Http/Controllers/Admin/SupplierController.php) - Supplier management
+- [`app/Http/Controllers/Admin/CostCodeController.php`](app/Http/Controllers/Admin/CostCodeController.php) - Cost code master data (CRUD with lock/unlock via status)
 
 ### Services Created
 - [`app/Services/ProcoreService.php`](app/Services/ProcoreService.php) - Procore API integration
@@ -37,6 +38,7 @@ The project had both CodeIgniter and Laravel frameworks coexisting. The migratio
 - [`resources/views/layouts/admin.blade.php`](resources/views/layouts/admin.blade.php) - Admin layout template
 - [`resources/views/admin/main.blade.php`](resources/views/admin/main.blade.php) - Dashboard view
 - [`resources/views/admin/porder/porder_list_view.blade.php`](resources/views/admin/porder/porder_list_view.blade.php) - Purchase orders list
+- [`resources/views/admin/costcodes/index.blade.php`](resources/views/admin/costcodes/index.blade.php) - Cost code management UI
 
 ### Routes Updated
 - [`routes/web.php`](routes/web.php) - All admin routes with proper naming conventions

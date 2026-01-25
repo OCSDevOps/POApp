@@ -119,6 +119,13 @@
                 </div>
             </li>
 
+            <li class="side-nav-item">
+                <a href="{{ route('admin.costcodes.index') }}" class="side-nav-link">
+                    <i class="uil-list-ui-alt"></i>
+                    <span> Cost Codes </span>
+                </a>
+            </li>
+
             {{-- <li class="side-nav-item">
                 <a data-bs-toggle="collapse" href="#sidebarEmail" aria-expanded="false" aria-controls="sidebarEmail" class="side-nav-link">
                     <i class="uil-envelope"></i>

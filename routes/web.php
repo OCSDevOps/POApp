@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\ReceiveOrderController;
 use App\Http\Controllers\Admin\PoTemplateController;
 use App\Http\Controllers\Admin\SupplierCatalogController;
 use App\Http\Controllers\Admin\ProcoreController;
+use App\Http\Controllers\Admin\CostCodeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -207,6 +208,14 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::get('/settings', [ProcoreController::class, 'settings'])->name('settings');
         Route::post('/settings', [ProcoreController::class, 'updateSettings'])->name('updatesettings');
         Route::post('/test-connection', [ProcoreController::class, 'testConnection'])->name('testconnection');
+    });
+
+    // Cost Codes
+    Route::prefix('costcodes')->name('costcodes.')->group(function () {
+        Route::get('/', [CostCodeController::class, 'index'])->name('index');
+        Route::post('/', [CostCodeController::class, 'store'])->name('store');
+        Route::put('/{costcode}', [CostCodeController::class, 'update'])->name('update');
+        Route::delete('/{costcode}', [CostCodeController::class, 'destroy'])->name('destroy');
     });
 });
 
