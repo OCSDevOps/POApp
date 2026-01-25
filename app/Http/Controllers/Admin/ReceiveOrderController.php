@@ -250,38 +250,8 @@ class ReceiveOrderController extends Controller
      */
     protected function updatePoDeliveryStatus($po)
     {
-        $poItems = PurchaseOrderItem::where('po_detail_porder_ms', $po->porder_id)
-            ->where('po_detail_status', 1)
-            ->get();
-
-        $fullyReceived = true;
-        $partiallyReceived = false;
-
-        foreach ($poItems as $poItem) {
-            $receivedQty = ReceiveOrderItem::whereHas('receiveOrder', function ($q) use ($po) {
-                $q->where('rorder_porder_ms', $po->porder_id);
-            })
-            ->where('ro_detail_item', $poItem->po_detail_item)
-            ->where('ro_detail_status', 1)
-            ->sum('ro_detail_quantity');
-
-            if ($receivedQty < $poItem->po_detail_quantity) {
-                $fullyReceived = false;
-            }
-            if ($receivedQty > 0) {
-                $partiallyReceived = true;
-            }
-        }
-
-        if ($fullyReceived) {
-            $po->porder_delivery_status = 1; // Fully received
-        } elseif ($partiallyReceived) {
-            $po->porder_delivery_status = 2; // Partially received
-        } else {
-            $po->porder_delivery_status = 0; // Not received
-        }
-
-        $po->save();
+        // Defer to the shared service so partial receipts also trigger backorder notifications.
+        return $this->poService->updatePoDeliveryStatus($po);
     }
 
     /**

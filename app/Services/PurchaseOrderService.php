@@ -428,7 +428,7 @@ class PurchaseOrderService
     /**
      * Update PO delivery status based on received quantities
      */
-    protected function updatePoDeliveryStatus($po)
+    public function updatePoDeliveryStatus($po)
     {
         $poItems = PurchaseOrderItem::where('po_detail_porder_ms', $po->porder_id)
             ->where('po_detail_status', 1)
