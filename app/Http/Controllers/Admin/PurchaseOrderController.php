@@ -1,0 +1,414 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use App\Models\PurchaseOrder;
+use App\Models\Project;
+use App\Models\Supplier;
+use App\Models\Item;
+use App\Models\ItemCategory;
+use App\Models\CostCode;
+use App\Models\UnitOfMeasure;
+use App\Models\TaxGroup;
+
+class PurchaseOrderController extends Controller
+{
+    /**
+     * Display a listing of purchase orders.
+     */
+    public function index(Request $request)
+    {
+        $project = $request->get('project');
+        $supplier = $request->get('supplier');
+        $status = $request->get('status');
+
+        $purchaseOrders = PurchaseOrder::with(['project', 'supplier'])
+            ->byProject($project)
+            ->bySupplier($supplier)
+            ->byStatus($status)
+            ->whereNotNull('porder_type')
+            ->orderBy('porder_id', 'DESC')
+            ->get();
+
+        $projects = Project::active()->orderByName()->get();
+        $suppliers = Supplier::active()->orderByName()->get();
+
+        $filters = [
+            'project' => $project,
+            'supplier' => $supplier,
+            'status' => $status,
+        ];
+
+        return view('admin.porder.porder_list_view', compact('purchaseOrders', 'projects', 'suppliers', 'filters'));
+    }
+
+    /**
+     * Show the form for creating a new purchase order.
+     */
+    public function create()
+    {
+        $user = Auth::user();
+        
+        // Check permissions
+        $templateDetails = DB::table('permission_master')
+            ->where('pt_id', session('pt_id'))
+            ->where('status', 1)
+            ->first();
+
+        if ($user->u_type != 1 && (!$templateDetails || $templateDetails->pt_t_porder >= 3)) {
+            return redirect()->route('error.404');
+        }
+
+        $items = Item::active()->nonRentable()->orderByName()->get();
+        $projects = Project::active()->orderByName()->get();
+        $suppliers = Supplier::active()->orderByName()->get();
+        $packages = DB::table('item_package_master')->orderBy('ipack_name', 'ASC')->get();
+        $taxGroups = DB::table('taxgroup_master')->orderBy('id', 'ASC')->get();
+        $costCodes = CostCode::orderById()->get();
+        $categories = ItemCategory::orderBy('icat_id', 'ASC')->get();
+        $uoms = DB::table('unit_of_measure_tab')->orderBy('uom_id', 'ASC')->get();
+
+        return view('admin.porder.add_pur_order', compact(
+            'items', 'projects', 'suppliers', 'packages', 
+            'taxGroups', 'costCodes', 'categories', 'uoms'
+        ));
+    }
+
+    /**
+     * Store a newly created purchase order.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'po_project' => 'required',
+            'po_supplier' => 'required',
+            'po_type' => 'required',
+            'po_date' => 'required|date',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Generate PO number
+            $lastPO = PurchaseOrder::orderBy('porder_id', 'DESC')->first();
+            $poNumber = 'PO-' . str_pad(($lastPO ? $lastPO->porder_id + 1 : 1), 6, '0', STR_PAD_LEFT);
+
+            $purchaseOrder = PurchaseOrder::create([
+                'porder_no' => $poNumber,
+                'porder_project_ms' => $request->po_project,
+                'porder_supplier_ms' => $request->po_supplier,
+                'porder_type' => $request->po_type,
+                'porder_date' => $request->po_date,
+                'porder_delivery_date' => $request->po_delivery_date,
+                'porder_notes' => $request->po_notes,
+                'porder_terms' => $request->po_terms,
+                'porder_general_status' => 'pending',
+                'porder_delivery_status' => '0',
+                'integration_status' => 'pending',
+                'porder_created_by' => Auth::id(),
+                'porder_created_at' => now(),
+            ]);
+
+            // Process items
+            if ($request->has('items')) {
+                $total = 0;
+                $tax = 0;
+
+                foreach ($request->items as $item) {
+                    $itemTotal = $item['quantity'] * $item['price'];
+                    $itemTax = $itemTotal * ($item['tax_rate'] ?? 0) / 100;
+                    
+                    DB::table('purchase_order_items')->insert([
+                        'porder_item_porder_ms' => $purchaseOrder->porder_id,
+                        'porder_item_code' => $item['code'],
+                        'porder_item_name' => $item['name'],
+                        'porder_item_qty' => $item['quantity'],
+                        'porder_item_price' => $item['price'],
+                        'porder_item_tax' => $itemTax,
+                        'porder_item_total' => $itemTotal + $itemTax,
+                        'porder_item_ccode' => $item['cost_code'] ?? null,
+                    ]);
+
+                    $total += $itemTotal;
+                    $tax += $itemTax;
+                }
+
+                $purchaseOrder->update([
+                    'porder_total' => $total,
+                    'porder_tax' => $tax,
+                    'porder_grand_total' => $total + $tax,
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('admin.porder.index')
+                ->with('success', 'Purchase Order created successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error creating purchase order: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Display the specified purchase order.
+     */
+    public function show($id)
+    {
+        $purchaseOrder = PurchaseOrder::with(['project', 'supplier', 'items'])->findOrFail($id);
+        
+        return view('admin.porder.view_pur_order', compact('purchaseOrder'));
+    }
+
+    /**
+     * Show the form for editing the specified purchase order.
+     */
+    public function edit($id)
+    {
+        $purchaseOrder = PurchaseOrder::with(['items'])->findOrFail($id);
+        
+        $items = Item::active()->nonRentable()->orderByName()->get();
+        $projects = Project::active()->orderByName()->get();
+        $suppliers = Supplier::active()->orderByName()->get();
+        $packages = DB::table('item_package_master')->orderBy('ipack_name', 'ASC')->get();
+        $taxGroups = DB::table('taxgroup_master')->orderBy('id', 'ASC')->get();
+        $costCodes = CostCode::orderById()->get();
+        $categories = ItemCategory::orderBy('icat_id', 'ASC')->get();
+        $uoms = DB::table('unit_of_measure_tab')->orderBy('uom_id', 'ASC')->get();
+
+        return view('admin.porder.edit_pur_order', compact(
+            'purchaseOrder', 'items', 'projects', 'suppliers', 
+            'packages', 'taxGroups', 'costCodes', 'categories', 'uoms'
+        ));
+    }
+
+    /**
+     * Update the specified purchase order.
+     */
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'po_project' => 'required',
+            'po_supplier' => 'required',
+            'po_type' => 'required',
+            'po_date' => 'required|date',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $purchaseOrder = PurchaseOrder::findOrFail($id);
+
+            $purchaseOrder->update([
+                'porder_project_ms' => $request->po_project,
+                'porder_supplier_ms' => $request->po_supplier,
+                'porder_type' => $request->po_type,
+                'porder_date' => $request->po_date,
+                'porder_delivery_date' => $request->po_delivery_date,
+                'porder_notes' => $request->po_notes,
+                'porder_terms' => $request->po_terms,
+                'porder_modified_by' => Auth::id(),
+                'porder_modified_at' => now(),
+            ]);
+
+            // Delete existing items and re-add
+            DB::table('purchase_order_items')
+                ->where('porder_item_porder_ms', $id)
+                ->delete();
+
+            // Process items
+            if ($request->has('items')) {
+                $total = 0;
+                $tax = 0;
+
+                foreach ($request->items as $item) {
+                    $itemTotal = $item['quantity'] * $item['price'];
+                    $itemTax = $itemTotal * ($item['tax_rate'] ?? 0) / 100;
+                    
+                    DB::table('purchase_order_items')->insert([
+                        'porder_item_porder_ms' => $purchaseOrder->porder_id,
+                        'porder_item_code' => $item['code'],
+                        'porder_item_name' => $item['name'],
+                        'porder_item_qty' => $item['quantity'],
+                        'porder_item_price' => $item['price'],
+                        'porder_item_tax' => $itemTax,
+                        'porder_item_total' => $itemTotal + $itemTax,
+                        'porder_item_ccode' => $item['cost_code'] ?? null,
+                    ]);
+
+                    $total += $itemTotal;
+                    $tax += $itemTax;
+                }
+
+                $purchaseOrder->update([
+                    'porder_total' => $total,
+                    'porder_tax' => $tax,
+                    'porder_grand_total' => $total + $tax,
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('admin.porder.index')
+                ->with('success', 'Purchase Order updated successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error updating purchase order: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove the specified purchase order.
+     */
+    public function destroy($id)
+    {
+        DB::beginTransaction();
+        try {
+            // Delete items first
+            DB::table('purchase_order_items')
+                ->where('porder_item_porder_ms', $id)
+                ->delete();
+
+            PurchaseOrder::destroy($id);
+
+            DB::commit();
+            return redirect()->route('admin.porder.index')
+                ->with('success', 'Purchase Order deleted successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error deleting purchase order: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get item master list for AJAX request.
+     */
+    public function getItemMasterList(Request $request)
+    {
+        $query = Item::active()
+            ->nonRentable()
+            ->with(['category', 'costCode']);
+
+        if ($request->filled('category')) {
+            $query->byCategory($request->category);
+        }
+
+        if ($request->filled('cc')) {
+            $query->byCostCode($request->cc);
+        }
+
+        $items = $query->orderByName()->get();
+
+        $data = [];
+        $count = 1;
+        foreach ($items as $item) {
+            $data[] = [
+                $count,
+                $item->item_code,
+                $item->item_name,
+                $item->category->icat_name ?? '',
+                $item->costCode->cc_no ?? '',
+                '<input type="checkbox" class="form-control search-item" id="search-item1' . $count . '" value="' . $item->item_code . '">'
+            ];
+            $count++;
+        }
+
+        return response()->json(['data' => $data]);
+    }
+
+    /**
+     * Get supplier catalog list for AJAX request.
+     */
+    public function getSupplierCatalogList(Request $request)
+    {
+        $query = DB::table('supplier_catalog_tab as sc')
+            ->join('item_master as im', 'im.item_code', '=', 'sc.supcat_item_code')
+            ->join('item_category_tab as ic', 'ic.icat_id', '=', 'im.item_cat_ms')
+            ->join('cost_code_master as cc', 'cc.cc_id', '=', 'im.item_ccode_ms')
+            ->where('im.item_status', 1)
+            ->where('im.item_is_rentable', 0);
+
+        if ($request->filled('category')) {
+            $query->where('im.item_cat_ms', $request->category);
+        }
+
+        if ($request->filled('cc')) {
+            $query->where('im.item_ccode_ms', $request->cc);
+        }
+
+        if ($request->filled('supplier')) {
+            $query->where('sc.supcat_supplier', $request->supplier);
+        }
+
+        $items = $query->orderBy('im.item_name', 'ASC')->get();
+
+        $data = [];
+        $count = 1;
+        foreach ($items as $item) {
+            $data[] = [
+                $count,
+                $item->item_code,
+                $item->item_name,
+                $item->icat_name,
+                $item->cc_no,
+                $item->supcat_sku_no,
+                $item->supcat_price,
+                '<input type="checkbox" class="form-control search-item" id="search-item2' . $count . '" value="' . $item->item_code . '">'
+            ];
+            $count++;
+        }
+
+        return response()->json(['data' => $data]);
+    }
+
+    /**
+     * Get project address for AJAX request.
+     */
+    public function getProjectAddress(Request $request)
+    {
+        $project = Project::find($request->po_project);
+        
+        if ($project) {
+            return response()->json([
+                'success' => true,
+                'address' => $project->proj_address,
+                'city' => $project->proj_city,
+                'state' => $project->proj_state,
+                'zip' => $project->proj_zip,
+            ]);
+        }
+
+        return response()->json(['success' => false]);
+    }
+
+    /**
+     * Update purchase order status.
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $purchaseOrder = PurchaseOrder::findOrFail($id);
+        
+        $purchaseOrder->update([
+            'porder_general_status' => $request->status,
+            'porder_modified_by' => Auth::id(),
+            'porder_modified_at' => now(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Status updated successfully']);
+    }
+
+    /**
+     * Generate PDF for purchase order.
+     */
+    public function generatePdf($id)
+    {
+        $purchaseOrder = PurchaseOrder::with(['project', 'supplier', 'items'])->findOrFail($id);
+        
+        // You can use a PDF library like DomPDF or TCPDF here
+        // For now, return a view that can be printed
+        return view('admin.pdf_view.purchase_order', compact('purchaseOrder'));
+    }
+}

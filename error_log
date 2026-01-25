@@ -1,0 +1,3 @@
+[21-Nov-2014 05:10:21 UTC] PHP Fatal error:  Call to undefined function set_value() in /home/snobshop24/public_html/dev/test_set.php on line 17
+[21-Nov-2014 05:15:46 UTC] PHP Fatal error:  Call to undefined function set_value() in /home/snobshop24/public_html/dev/test_set.php on line 16
+[21-Nov-2014 05:18:02 UTC] PHP Fatal error:  Call to undefined function form_error() in /home/snobshop24/public_html/dev/test_set.php on line 17

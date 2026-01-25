@@ -1,0 +1,4 @@
+Supplier,"Item Code","Sku No",UOM,"Unit Price","Rental Daily Price","Rental Weekly Price","Rental Monthly Price","Price Expiry Date"
+"Subcontracting TEST Company",REBARTIE616,TTIT3,ea,10.00,0.00,0.00,0.00,2022-09-20
+"Subcontracting TEST Company",REBAR152CORN,TTIT2,ea,15.00,0.00,0.00,0.00,2022-09-20
+"Subcontracting TEST Company",REBAR1520,TTIT1,ea,35.00,0.00,0.00,0.00,2022-09-20

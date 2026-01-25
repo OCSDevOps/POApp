@@ -1,0 +1,8 @@
+Supplier,Item Code,Sku No,UOM,Unit Price,Rental Daily Price,Rental Weekly Price,Rental Monthly Price,Price Expiry Date
+Subcontracting TEST Company,11016FAS,TT,months,35,0,0,0,9/01/22
+Subcontracting TEST Company,PSL312914(2.2E),TT1,ea,10,0,0,0,9/01/22
+Subcontracting TEST Company,PSL312912(2.2E),TT2,ea,10,0,0,0,9/01/22
+Subcontracting TEST Company,PSL3121178(2.2E),TT3,ea,10,0,0,0,9/01/22
+Subcontracting TEST Company,PSL31214(2.2E),TT4,ea,10,0,0,0,9/01/22
+Subcontracting TEST Company,PSL31216(2.2E),TT5,ea,10,0,0,0,9/01/22
+Subcontracting TEST Company,PSL31218(2.2E),TT6,ea,10,0,0,0,9/01/22
