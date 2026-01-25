@@ -147,6 +147,13 @@
                 </a>
             </li>
 
+            <li class="side-nav-item">
+                <a href="{{ route('admin.permissions.index') }}" class="side-nav-link">
+                    <i class="uil-shield-check"></i>
+                    <span> Permissions </span>
+                </a>
+            </li>
+
             {{-- <li class="side-nav-item">
                 <a data-bs-toggle="collapse" href="#sidebarEmail" aria-expanded="false" aria-controls="sidebarEmail" class="side-nav-link">
                     <i class="uil-envelope"></i>

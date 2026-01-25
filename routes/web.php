@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\CostCodeController;
 use App\Http\Controllers\Admin\UnitOfMeasureController;
 use App\Http\Controllers\Admin\TaxGroupController;
 use App\Http\Controllers\Admin\EquipmentController;
+use App\Http\Controllers\Admin\PermissionTemplateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -243,6 +244,14 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::post('/', [EquipmentController::class, 'store'])->name('store');
         Route::put('/{equipment}', [EquipmentController::class, 'update'])->name('update');
         Route::delete('/{equipment}', [EquipmentController::class, 'destroy'])->name('destroy');
+    });
+
+    // Permission Templates
+    Route::prefix('permissions')->name('permissions.')->group(function () {
+        Route::get('/', [PermissionTemplateController::class, 'index'])->name('index');
+        Route::post('/', [PermissionTemplateController::class, 'store'])->name('store');
+        Route::put('/{permission}', [PermissionTemplateController::class, 'update'])->name('update');
+        Route::delete('/{permission}', [PermissionTemplateController::class, 'destroy'])->name('destroy');
     });
 });
 
