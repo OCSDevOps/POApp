@@ -22,6 +22,9 @@ use App\Http\Controllers\Admin\EquipmentController;
 use App\Http\Controllers\Admin\PermissionTemplateController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\ItemPackageController;
+use App\Http\Controllers\Admin\ChecklistController;
+use App\Http\Controllers\Admin\PerformChecklistController;
+use App\Http\Controllers\Admin\SupportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -255,6 +258,27 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::put('/{permission}', [PermissionTemplateController::class, 'update'])->name('update');
         Route::delete('/{permission}', [PermissionTemplateController::class, 'destroy'])->name('destroy');
     });
+
+    // Checklists
+    Route::prefix('checklists')->name('checklists.')->group(function () {
+        Route::get('/', [ChecklistController::class, 'index'])->name('index');
+        Route::get('/create', [ChecklistController::class, 'create'])->name('create');
+        Route::post('/', [ChecklistController::class, 'store'])->name('store');
+        Route::get('/{checklist}/edit', [ChecklistController::class, 'edit'])->name('edit');
+        Route::put('/{checklist}', [ChecklistController::class, 'update'])->name('update');
+        Route::delete('/{checklist}', [ChecklistController::class, 'destroy'])->name('destroy');
+    });
+
+    // Perform Checklists
+    Route::prefix('perform-checklists')->name('performchecklists.')->group(function () {
+        Route::get('/', [PerformChecklistController::class, 'index'])->name('index');
+        Route::get('/create', [PerformChecklistController::class, 'create'])->name('create');
+        Route::post('/', [PerformChecklistController::class, 'store'])->name('store');
+        Route::get('/{performchecklist}', [PerformChecklistController::class, 'show'])->name('show');
+    });
+
+    // Support
+    Route::get('support', [SupportController::class, 'index'])->name('support.index');
 
     // Company Settings
     Route::prefix('company')->name('company.')->group(function () {
