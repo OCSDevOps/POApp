@@ -84,6 +84,7 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::post('/get-item-master-list', [PurchaseOrderController::class, 'getItemMasterList'])->name('itemlist');
         Route::post('/get-supplier-catalog-list', [PurchaseOrderController::class, 'getSupplierCatalogList'])->name('cataloglist');
         Route::post('/get-project-address', [PurchaseOrderController::class, 'getProjectAddress'])->name('projectaddress');
+        Route::post('/check-budget-availability', [PurchaseOrderController::class, 'checkBudgetAvailability'])->name('check-budget');
     });
     
     // Projects

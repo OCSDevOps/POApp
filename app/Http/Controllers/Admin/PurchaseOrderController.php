@@ -14,9 +14,26 @@ use App\Models\ItemCategory;
 use App\Models\CostCode;
 use App\Models\UnitOfMeasure;
 use App\Models\TaxGroup;
+use App\Services\BudgetService;
+use App\Services\ApprovalService;
+use App\Services\PoChangeOrderService;
 
 class PurchaseOrderController extends Controller
 {
+    protected $budgetService;
+    protected $approvalService;
+    protected $poChangeOrderService;
+
+    public function __construct(
+        BudgetService $budgetService,
+        ApprovalService $approvalService,
+        PoChangeOrderService $poChangeOrderService
+    ) {
+        $this->budgetService = $budgetService;
+        $this->approvalService = $approvalService;
+        $this->poChangeOrderService = $poChangeOrderService;
+    }
+
     /**
      * Display a listing of purchase orders.
      */
@@ -72,9 +89,15 @@ class PurchaseOrderController extends Controller
         $categories = ItemCategory::orderBy('icat_id', 'ASC')->get();
         $uoms = DB::table('unit_of_measure_tab')->orderBy('uom_id', 'ASC')->get();
 
+        // Get budget info for display
+        $budgetInfo = [];
+        if ($request->has('project_id')) {
+            $budgetInfo = $this->budgetService->getProjectBudgetSummary($request->project_id);
+        }
+
         return view('admin.porder.add_pur_order', compact(
             'items', 'projects', 'suppliers', 'packages', 
-            'taxGroups', 'costCodes', 'categories', 'uoms'
+            'taxGroups', 'costCodes', 'categories', 'uoms', 'budgetInfo'
         ));
     }
 
@@ -136,11 +159,70 @@ class PurchaseOrderController extends Controller
                     $tax += $itemTax;
                 }
 
+                $grandTotal = $total + $tax;
+
                 $purchaseOrder->update([
                     'porder_total' => $total,
                     'porder_tax' => $tax,
-                    'porder_grand_total' => $total + $tax,
+                    'porder_grand_total' => $grandTotal,
+                    'original_total' => $grandTotal,
                 ]);
+
+                // Budget validation - check availability
+                $costCodeIds = collect($request->items)->pluck('cost_code')->filter()->unique()->toArray();
+                
+                if (!empty($costCodeIds)) {
+                    $budgetValidation = $this->budgetService->validatePoBudget(
+                        $request->po_project,
+                        $costCodeIds,
+                        $grandTotal
+                    );
+
+                    // Check if any cost code exceeds critical threshold (90%)
+                    $hasExceeded = collect($budgetValidation)->contains(function ($validation) {
+                        return $validation['utilization_after'] >= 90;
+                    });
+
+                    if ($hasExceeded && !$request->has('budget_override')) {
+                        // Budget override required
+                        DB::rollBack();
+                        $exceedingCodes = collect($budgetValidation)
+                            ->filter(fn($v) => $v['utilization_after'] >= 90)
+                            ->map(fn($v) => $v['cost_code'])
+                            ->implode(', ');
+                        
+                        return back()->withInput()
+                            ->with('budget_warning', "Budget critical threshold (90%) exceeded for cost codes: {$exceedingCodes}. Override required.")
+                            ->with('budget_validation', $budgetValidation)
+                            ->with('requires_override', true);
+                    }
+
+                    // Check warning threshold (75%)
+                    $hasWarning = collect($budgetValidation)->contains(function ($validation) {
+                        return $validation['utilization_after'] >= 75 && $validation['utilization_after'] < 90;
+                    });
+
+                    if ($hasWarning) {
+                        $warningCodes = collect($budgetValidation)
+                            ->filter(fn($v) => $v['utilization_after'] >= 75 && $v['utilization_after'] < 90)
+                            ->map(fn($v) => $v['cost_code'])
+                            ->implode(', ');
+                        
+                        session()->flash('budget_warning', "Warning: Budget threshold (75%) reached for cost codes: {$warningCodes}");
+                    }
+
+                    // Update budget commitments
+                    foreach ($request->items as $item) {
+                        if (!empty($item['cost_code'])) {
+                            $itemTotal = $item['quantity'] * $item['price'];
+                            $this->budgetService->updateBudgetCommitment(
+                                $request->po_project,
+                                $item['cost_code'],
+                                $itemTotal
+                            );
+                        }
+                    }
+                }
             }
 
             DB::commit();
@@ -242,10 +324,42 @@ class PurchaseOrderController extends Controller
                     $tax += $itemTax;
                 }
 
+                $newGrandTotal = $total + $tax;
+                $originalTotal = $purchaseOrder->original_total ?? $purchaseOrder->porder_grand_total;
+
+                // Check if amount changed - create PCO if significant change
+                if (abs($newGrandTotal - $purchaseOrder->porder_grand_total) > 0.01) {
+                    // Create PO Change Order
+                    $pco = $this->poChangeOrderService->createPoChangeOrder(
+                        $purchaseOrder->porder_id,
+                        Auth::id(),
+                        'amount_change',
+                        $purchaseOrder->porder_grand_total,
+                        $newGrandTotal,
+                        $request->change_reason ?? 'PO amount updated during edit'
+                    );
+
+                    // Submit for approval if required
+                    try {
+                        $this->approvalService->submitForApproval(
+                            'PoChangeOrder',
+                            $pco->poco_id,
+                            $request->po_project,
+                            abs($newGrandTotal - $purchaseOrder->porder_grand_total)
+                        );
+
+                        session()->flash('info', 'PO Change Order ' . $pco->poco_number . ' created and submitted for approval.');
+                    } catch (\Exception $e) {
+                        // No workflow, auto-approve
+                        $this->poChangeOrderService->approvePoChangeOrder($pco->poco_id, Auth::id());
+                        session()->flash('info', 'PO Change Order ' . $pco->poco_number . ' created and auto-approved.');
+                    }
+                }
+
                 $purchaseOrder->update([
                     'porder_total' => $total,
                     'porder_tax' => $tax,
-                    'porder_grand_total' => $total + $tax,
+                    'porder_grand_total' => $newGrandTotal,
                 ]);
             }
 
@@ -410,5 +524,61 @@ class PurchaseOrderController extends Controller
         // You can use a PDF library like DomPDF or TCPDF here
         // For now, return a view that can be printed
         return view('admin.pdf_view.purchase_order', compact('purchaseOrder'));
+    }
+
+    /**
+     * Check budget availability for AJAX request.
+     */
+    public function checkBudgetAvailability(Request $request)
+    {
+        try {
+            $projectId = $request->input('project_id');
+            $costCodeId = $request->input('cost_code_id');
+            $amount = $request->input('amount', 0);
+
+            if (!$projectId || !$costCodeId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Project ID and Cost Code ID are required'
+                ], 400);
+            }
+
+            $validation = $this->budgetService->validatePoBudget(
+                $projectId,
+                [$costCodeId],
+                $amount
+            );
+
+            $result = $validation[0] ?? null;
+
+            if (!$result) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No budget found for this cost code'
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'budget' => $result['budget'],
+                'committed' => $result['committed'],
+                'available' => $result['available'],
+                'utilization_before' => $result['utilization_before'],
+                'utilization_after' => $result['utilization_after'],
+                'status' => $result['utilization_after'] >= 90 ? 'critical' : 
+                           ($result['utilization_after'] >= 75 ? 'warning' : 'ok'),
+                'message' => $result['utilization_after'] >= 90 ? 
+                    'Budget critical threshold (90%) exceeded. Override required.' :
+                    ($result['utilization_after'] >= 75 ? 
+                        'Warning: Budget threshold (75%) reached.' : 
+                        'Budget available.')
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error checking budget: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
