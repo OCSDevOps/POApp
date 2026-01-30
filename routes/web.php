@@ -229,6 +229,21 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::post('/test-connection', [ProcoreController::class, 'testConnection'])->name('testconnection');
     });
 
+    // Accounting Integrations (Sage, QuickBooks, etc.)
+    Route::prefix('integrations')->name('integrations.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\IntegrationController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\IntegrationController::class, 'create'])->name('create');
+        Route::post('/store', [\App\Http\Controllers\Admin\IntegrationController::class, 'store'])->name('store');
+        Route::get('/oauth/{type}/callback', [\App\Http\Controllers\Admin\IntegrationController::class, 'oauthCallback'])->name('oauth.callback');
+        Route::post('/test-connection/{id}', [\App\Http\Controllers\Admin\IntegrationController::class, 'testConnection'])->name('testconnection');
+        Route::post('/sync-purchase-orders/{id}', [\App\Http\Controllers\Admin\IntegrationController::class, 'syncPurchaseOrders'])->name('syncpurchaseorders');
+        Route::post('/sync-vendors/{id}', [\App\Http\Controllers\Admin\IntegrationController::class, 'syncVendors'])->name('syncvendors');
+        Route::get('/logs/{id}', [\App\Http\Controllers\Admin\IntegrationController::class, 'logs'])->name('logs');
+        Route::put('/update/{id}', [\App\Http\Controllers\Admin\IntegrationController::class, 'update'])->name('update');
+        Route::post('/toggle-active/{id}', [\App\Http\Controllers\Admin\IntegrationController::class, 'toggleActive'])->name('toggleactive');
+        Route::delete('/delete/{id}', [\App\Http\Controllers\Admin\IntegrationController::class, 'destroy'])->name('destroy');
+    });
+
     // Cost Codes
     Route::prefix('costcodes')->name('costcodes.')->group(function () {
         Route::get('/', [CostCodeController::class, 'index'])->name('index');
