@@ -11,6 +11,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\ReceiveOrder;
 use App\Models\ReceiveOrderItem;
+use App\Services\BackorderService;
 use App\Models\Rfq;
 use App\Models\RfqItem;
 use App\Models\RfqQuote;
@@ -208,6 +209,7 @@ class PurchaseOrderService
                 'rfq_status' => Rfq::STATUS_DRAFT,
                 'rfq_created_by' => auth()->id() ?? 1,
                 'rfq_created_at' => now(),
+                'company_id' => $data['company_id'] ?? session('company_id'),
             ]);
 
             // Add items
@@ -220,6 +222,8 @@ class PurchaseOrderService
                     'rfqi_target_price' => $item['target_price'] ?? null,
                     'rfqi_notes' => $item['notes'] ?? null,
                     'rfqi_created_at' => now(),
+                    'company_id' => $rfq->company_id,
+                    'project_id' => $data['project_id'],
                 ]);
             }
 
@@ -230,6 +234,7 @@ class PurchaseOrderService
                     'rfqs_supplier_id' => $supplierId,
                     'rfqs_status' => RfqSupplier::STATUS_PENDING,
                     'rfqs_created_at' => now(),
+                    'company_id' => $rfq->company_id,
                 ]);
             }
 
@@ -270,6 +275,7 @@ class PurchaseOrderService
                     'rfqq_valid_until' => $quote['valid_until'] ?? null,
                     'rfqq_notes' => $quote['notes'] ?? null,
                     'rfqq_created_at' => now(),
+                    'company_id' => $rfqSupplier->company_id,
                 ]);
             }
 
@@ -452,6 +458,9 @@ class PurchaseOrderService
                 $partiallyReceived = true;
             }
         }
+
+        // Refresh backorder fields on items
+        app(BackorderService::class)->recalcForPo($po);
 
         if ($fullyReceived) {
             $po->porder_delivery_status = 1; // Fully received

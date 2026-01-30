@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -28,13 +29,20 @@ class RfqSupplier extends Model
         'rfqs_status',
         'rfqs_notes',
         'rfqs_created_at',
+        'company_id',
     ];
 
     protected $casts = [
         'rfqs_sent_date' => 'datetime',
         'rfqs_response_date' => 'datetime',
         'rfqs_created_at' => 'datetime',
+        'company_id' => 'integer',
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
 
     /**
      * Get the RFQ for this supplier entry.

@@ -128,6 +128,11 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::get('/export', [ItemController::class, 'export'])->name('export');
     });
 
+    // Item Pricing (read-only admin view)
+    Route::prefix('pricing')->name('pricing.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ItemPricingController::class, 'index'])->name('index');
+    });
+
     // RFQ (Request for Quote)
     Route::prefix('rfq')->name('rfq.')->group(function () {
         Route::get('/', [RfqController::class, 'index'])->name('index');
@@ -168,6 +173,11 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::delete('/delete/{id}', [ReceiveOrderController::class, 'destroy'])->name('destroy');
         Route::get('/back-order-report', [ReceiveOrderController::class, 'backOrderReport'])->name('backorderreport');
         Route::get('/summary', [ReceiveOrderController::class, 'receivingSummary'])->name('summary');
+    });
+
+    // Backorders dashboard
+    Route::prefix('backorders')->name('backorders.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\BackorderController::class, 'index'])->name('index');
     });
 
     // PO Templates
@@ -303,3 +313,6 @@ Route::post('procore/webhook', [ProcoreController::class, 'webhook'])->name('pro
 Route::get('default404', function () {
     return view('errors.404');
 })->name('error.404');
+
+// Supplier Portal Routes
+require __DIR__.'/supplier.php';

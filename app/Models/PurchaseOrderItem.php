@@ -20,6 +20,9 @@ class PurchaseOrderItem extends Model
         'po_detail_sku',
         'po_detail_taxcode',
         'po_detail_quantity',
+        'backordered_qty',
+        'expected_backorder_date',
+        'backorder_status',
         'po_detail_unitprice',
         'po_detail_subtotal',
         'po_detail_taxamount',
@@ -35,6 +38,7 @@ class PurchaseOrderItem extends Model
         'po_detail_taxamount' => 'decimal:2',
         'po_detail_total' => 'decimal:2',
         'po_detail_createdate' => 'datetime',
+        'expected_backorder_date' => 'date',
     ];
 
     /**

@@ -23,7 +23,12 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                return redirect(RouteServiceProvider::HOME);
+                // Redirect based on guard
+                if ($guard === 'supplier') {
+                    return redirect()->route('supplier.dashboard');
+                }
+
+                return redirect(RouteServiceProvider::HOME); // Default redirect for web guard
             }
         }
 

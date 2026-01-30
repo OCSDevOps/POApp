@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -33,7 +34,25 @@ class PurchaseOrder extends Model
         'porder_modified_at',
         'integration_status',
         'procore_po_id',
+        'company_id',
     ];
+
+    /**
+     * Boot method to apply global scope.
+     * Temporarily disabled during initial migration.
+     */
+    // protected static function booted()
+    // {
+    //     static::addGlobalScope(new CompanyScope);
+    // }
+
+    /**
+     * Get the company that owns the purchase order.
+     */
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id', 'id');
+    }
 
     /**
      * Get the project associated with the purchase order.

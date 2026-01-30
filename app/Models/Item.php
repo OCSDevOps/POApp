@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -27,7 +28,25 @@ class Item extends Model
         'item_created_at',
         'item_modified_by',
         'item_modified_at',
+        'company_id',
     ];
+
+    /**
+     * Boot method to apply global scope.
+     * Temporarily disabled during initial migration.
+     */
+    // protected static function booted()
+    // {
+    //     static::addGlobalScope(new CompanyScope);
+    // }
+
+    /**
+     * Get the company that owns the item.
+     */
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id', 'id');
+    }
 
     /**
      * Get the category for the item.

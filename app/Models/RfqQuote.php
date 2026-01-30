@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -21,13 +22,20 @@ class RfqQuote extends Model
         'rfqq_valid_until',
         'rfqq_notes',
         'rfqq_created_at',
+        'company_id',
     ];
 
     protected $casts = [
         'rfqq_quoted_price' => 'decimal:2',
         'rfqq_valid_until' => 'date',
         'rfqq_created_at' => 'datetime',
+        'company_id' => 'integer',
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
 
     /**
      * Get the RFQ supplier entry.

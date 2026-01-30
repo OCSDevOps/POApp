@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -31,7 +32,25 @@ class Supplier extends Model
         'sup_modified_by',
         'sup_modified_at',
         'procore_supplier_id',
+        'company_id',
     ];
+
+    /**
+     * Boot method to apply global scope.
+     * Temporarily disabled during initial migration.
+     */
+    // protected static function booted()
+    // {
+    //     static::addGlobalScope(new CompanyScope);
+    // }
+
+    /**
+     * Get the company that owns the supplier.
+     */
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id', 'id');
+    }
 
     /**
      * Get the purchase orders for the supplier.

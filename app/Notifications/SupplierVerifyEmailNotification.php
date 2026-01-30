@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Notifications;
+
+use Carbon\Carbon;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\URL;
+
+class SupplierVerifyEmailNotification extends Notification
+{
+    /**
+     * Get the notification's delivery channels.
+     */
+    public function via($notifiable): array
+    {
+        return ['mail'];
+    }
+
+    /**
+     * Build the mail representation of the notification.
+     */
+    public function toMail($notifiable): MailMessage
+    {
+        $verificationUrl = $this->verificationUrl($notifiable);
+
+        return (new MailMessage)
+            ->subject('Verify your supplier account')
+            ->line('Thanks for signing up as a supplier. Please verify your email address to continue.')
+            ->action('Verify Email', $verificationUrl)
+            ->line('If you did not create an account, no further action is required.');
+    }
+
+    /**
+     * Generate a signed verification URL for the supplier guard.
+     */
+    protected function verificationUrl($notifiable): string
+    {
+        return URL::temporarySignedRoute(
+            'supplier.verification.verify',
+            Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
+            [
+                'id' => $notifiable->getKey(),
+                'hash' => sha1($notifiable->getEmailForVerification()),
+            ]
+        );
+    }
+}

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Scopes\CompanyScope;
 
 class Rfq extends Model
 {
@@ -31,13 +32,20 @@ class Rfq extends Model
         'rfq_created_at',
         'rfq_modified_by',
         'rfq_modified_at',
+        'company_id',
     ];
 
     protected $casts = [
         'rfq_due_date' => 'date',
         'rfq_created_at' => 'datetime',
         'rfq_modified_at' => 'datetime',
+        'company_id' => 'integer',
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
 
     /**
      * Get the project for this RFQ.
