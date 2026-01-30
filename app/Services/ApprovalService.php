@@ -8,6 +8,8 @@ use App\Models\BudgetChangeOrder;
 use App\Models\PoChangeOrder;
 use App\Models\PurchaseOrder;
 use App\Models\Budget;
+use App\Models\ProjectRole;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -24,19 +26,35 @@ use Illuminate\Support\Facades\Notification;
 class ApprovalService
 {
     /**
-     * Submit an entity for approval.
+     * Submit an entity for approval with role-based routing.
+     * 
+     * @param string $entityType (po, budget_co, po_co, receive_order)
+     * @param int $entityId
+     * @param float $amount
+     * @param int $requestedBy User ID
+     * @param int $projectId Project ID for role resolution
      */
-    public function submitForApproval($entityType, $entityId, $amount, $requestedBy): array
+    public function submitForApproval($entityType, $entityId, $amount, $requestedBy, $projectId): array
     {
         try {
             DB::beginTransaction();
             
-            // Find applicable workflows
+            // Find applicable workflows - check project-specific first, then company-wide
             $workflows = ApprovalWorkflow::byType($entityType)
                 ->active()
                 ->forAmount($amount)
+                ->where(function($query) use ($projectId) {
+                    $query->where('project_id', $projectId)
+                        ->orWhereNull('project_id');
+                })
+                ->orderBy('project_id', 'DESC') // Project-specific workflows take precedence
                 ->orderBy('approval_level')
                 ->get();
+            
+            // Remove duplicate levels if project workflow overrides company workflow
+            if ($workflows->count() > 0 && $workflows->first()->project_id) {
+                $workflows = $workflows->where('project_id', $projectId);
+            }
             
             if ($workflows->isEmpty()) {
                 // No approval required - auto-approve
@@ -71,9 +89,9 @@ class ApprovalService
             // Update entity status to pending approval
             $this->updateEntityStatus($entityType, $entityId, 'pending_approval');
             
-            // Assign to first level approvers
+            // Assign to first level approvers using role-based resolution
             $firstWorkflow = $workflows->first();
-            $approvers = $firstWorkflow->getApprovers();
+            $approvers = $this->resolveApproversFromWorkflow($firstWorkflow, $projectId, $amount);
             
             if ($approvers->isNotEmpty()) {
                 $request->current_approver_id = $approvers->first()->user_id;
@@ -105,6 +123,55 @@ class ApprovalService
                 'error' => $e->getMessage(),
             ];
         }
+    }
+    
+    /**
+     * Resolve approvers from workflow based on roles or user IDs.
+     */
+    protected function resolveApproversFromWorkflow(ApprovalWorkflow $workflow, $projectId, $amount)
+    {
+        // Check if workflow uses role-based approvers
+        if ($workflow->approver_roles) {
+            $roles = is_string($workflow->approver_roles) 
+                ? json_decode($workflow->approver_roles, true) 
+                : $workflow->approver_roles;
+            
+            return $this->getUsersByRoles($projectId, $roles, $amount);
+        }
+        
+        // Fallback to legacy user ID based approvers
+        if ($workflow->approver_user_ids) {
+            $userIds = is_string($workflow->approver_user_ids) 
+                ? json_decode($workflow->approver_user_ids, true) 
+                : $workflow->approver_user_ids;
+            
+            return User::whereIn('user_id', $userIds)->get();
+        }
+        
+        return collect();
+    }
+    
+    /**
+     * Get users by their project roles.
+     */
+    protected function getUsersByRoles($projectId, array $roleNames, $amount)
+    {
+        $query = ProjectRole::byProject($projectId)
+            ->whereIn('role_name', $roleNames)
+            ->active()
+            ->with('user');
+        
+        // Filter by approval limit if checking PO/CO approvals
+        if ($amount) {
+            $query->where(function($q) use ($amount) {
+                $q->whereNull('approval_limit') // No limit = can approve any amount
+                    ->orWhere('approval_limit', '>=', $amount);
+            });
+        }
+        
+        $projectRoles = $query->get();
+        
+        return $projectRoles->pluck('user')->unique('user_id');
     }
 
     /**
