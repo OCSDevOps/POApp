@@ -319,6 +319,67 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::put('/{package}', [ItemPackageController::class, 'update'])->name('update');
         Route::delete('/{package}', [ItemPackageController::class, 'destroy'])->name('destroy');
     });
+
+    // Phase 2.2: Project Budget Management
+    Route::prefix('budgets')->name('budgets.')->group(function () {
+        // Cost code assignment
+        Route::get('/projects/{projectId}/assign-cost-codes', [\App\Http\Controllers\Admin\ProjectBudgetController::class, 'assignCostCodes'])->name('assign-cost-codes');
+        Route::post('/projects/{projectId}/save-cost-codes', [\App\Http\Controllers\Admin\ProjectBudgetController::class, 'saveCostCodeAssignments'])->name('save-cost-codes');
+        
+        // Budget setup
+        Route::get('/projects/{projectId}/setup', [\App\Http\Controllers\Admin\ProjectBudgetController::class, 'setupBudgets'])->name('setup');
+        Route::post('/projects/{projectId}/save', [\App\Http\Controllers\Admin\ProjectBudgetController::class, 'saveBudgets'])->name('save');
+        
+        // Budget summary
+        Route::get('/projects/{projectId}', [\App\Http\Controllers\Admin\ProjectBudgetController::class, 'viewBudgetSummary'])->name('view');
+        Route::get('/projects/{projectId}/cost-codes/{costCodeId}/details', [\App\Http\Controllers\Admin\ProjectBudgetController::class, 'getBudgetDetails'])->name('details');
+        
+        // Budget availability check (AJAX)
+        Route::post('/projects/{projectId}/check-availability', [\App\Http\Controllers\Admin\ProjectBudgetController::class, 'checkBudgetAvailability'])->name('check-availability');
+    });
+
+    // Budget Change Orders
+    Route::prefix('budget-change-orders')->name('budget-change-orders.')->group(function () {
+        Route::get('/projects/{projectId}', [\App\Http\Controllers\Admin\BudgetChangeOrderController::class, 'index'])->name('index');
+        Route::get('/projects/{projectId}/create', [\App\Http\Controllers\Admin\BudgetChangeOrderController::class, 'create'])->name('create');
+        Route::post('/projects/{projectId}', [\App\Http\Controllers\Admin\BudgetChangeOrderController::class, 'store'])->name('store');
+        Route::get('/projects/{projectId}/{id}', [\App\Http\Controllers\Admin\BudgetChangeOrderController::class, 'show'])->name('show');
+        Route::post('/projects/{projectId}/{id}/submit', [\App\Http\Controllers\Admin\BudgetChangeOrderController::class, 'submit'])->name('submit');
+        Route::post('/projects/{projectId}/{id}/approve', [\App\Http\Controllers\Admin\BudgetChangeOrderController::class, 'approve'])->name('approve');
+        Route::post('/projects/{projectId}/{id}/reject', [\App\Http\Controllers\Admin\BudgetChangeOrderController::class, 'reject'])->name('reject');
+        Route::post('/projects/{projectId}/{id}/cancel', [\App\Http\Controllers\Admin\BudgetChangeOrderController::class, 'cancel'])->name('cancel');
+        
+        // AJAX: Get budget details
+        Route::post('/projects/{projectId}/budget-details', [\App\Http\Controllers\Admin\BudgetChangeOrderController::class, 'getBudgetDetails'])->name('budget-details');
+    });
+
+    // PO Change Orders
+    Route::prefix('po-change-orders')->name('po-change-orders.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PoChangeOrderController::class, 'index'])->name('index');
+        Route::get('/purchase-orders/{poId}/create', [\App\Http\Controllers\Admin\PoChangeOrderController::class, 'create'])->name('create');
+        Route::post('/purchase-orders/{poId}', [\App\Http\Controllers\Admin\PoChangeOrderController::class, 'store'])->name('store');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\PoChangeOrderController::class, 'show'])->name('show');
+        Route::post('/{id}/submit', [\App\Http\Controllers\Admin\PoChangeOrderController::class, 'submit'])->name('submit');
+        Route::post('/{id}/approve', [\App\Http\Controllers\Admin\PoChangeOrderController::class, 'approve'])->name('approve');
+        Route::post('/{id}/reject', [\App\Http\Controllers\Admin\PoChangeOrderController::class, 'reject'])->name('reject');
+        Route::post('/{id}/cancel', [\App\Http\Controllers\Admin\PoChangeOrderController::class, 'cancel'])->name('cancel');
+        
+        // AJAX: Check budget availability
+        Route::get('/{id}/check-budget', [\App\Http\Controllers\Admin\PoChangeOrderController::class, 'checkBudgetAvailability'])->name('check-budget');
+    });
+
+    // Approvals Dashboard
+    Route::prefix('approvals')->name('approvals.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ApprovalController::class, 'dashboard'])->name('dashboard');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\ApprovalController::class, 'show'])->name('show');
+        Route::post('/{id}/approve', [\App\Http\Controllers\Admin\ApprovalController::class, 'approve'])->name('approve');
+        Route::post('/{id}/reject', [\App\Http\Controllers\Admin\ApprovalController::class, 'reject'])->name('reject');
+        Route::post('/{id}/override', [\App\Http\Controllers\Admin\ApprovalController::class, 'override'])->name('override');
+        
+        // AJAX: Get approval history
+        Route::get('/history/entity', [\App\Http\Controllers\Admin\ApprovalController::class, 'getHistory'])->name('history');
+        Route::get('/statistics', [\App\Http\Controllers\Admin\ApprovalController::class, 'getStatistics'])->name('statistics');
+    });
 });
 
 // Procore Webhook (No auth required)
