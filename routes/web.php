@@ -408,6 +408,24 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::post('/{id}/toggle-status', [\App\Http\Controllers\Admin\ApprovalWorkflowController::class, 'toggleStatus'])->name('toggle-status');
         Route::delete('/{id}', [\App\Http\Controllers\Admin\ApprovalWorkflowController::class, 'destroy'])->name('destroy');
     });
+    
+    // Budget Reports & Analytics
+    Route::prefix('reports')->name('reports.')->group(function () {
+        // Budget vs Actual Report
+        Route::get('/budget-vs-actual', [\App\Http\Controllers\Admin\BudgetReportController::class, 'index'])->name('budget-vs-actual');
+        Route::get('/budget-vs-actual/export', [\App\Http\Controllers\Admin\BudgetReportController::class, 'export'])->name('budget-vs-actual.export');
+        Route::get('/budget-drilldown/{projectId}/{costCodeId}', [\App\Http\Controllers\Admin\BudgetReportController::class, 'drilldown'])->name('budget-drilldown');
+        
+        // Variance Analysis Dashboard
+        Route::get('/variance-analysis', [\App\Http\Controllers\Admin\BudgetReportController::class, 'varianceAnalysis'])->name('variance-analysis');
+        
+        // Change Order Reports
+        Route::get('/change-orders', [\App\Http\Controllers\Admin\ChangeOrderReportController::class, 'index'])->name('change-orders');
+        Route::get('/change-orders/export', [\App\Http\Controllers\Admin\ChangeOrderReportController::class, 'export'])->name('change-orders.export');
+        
+        // Committed vs Actual Tracking
+        Route::get('/committed-vs-actual', [\App\Http\Controllers\Admin\CommittedActualReportController::class, 'index'])->name('committed-vs-actual');
+    });
 });
 
 // Procore Webhook (No auth required)
