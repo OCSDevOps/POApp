@@ -45,6 +45,7 @@ class BudgetReportController extends Controller
             ->join('cost_code_master as cc', 'b.budget_cost_code_id', '=', 'cc.cc_id')
             ->where('b.budget_project_id', $projectId)
             ->select(
+                'cc.cc_id',
                 'cc.cc_no as cost_code',
                 'cc.cc_name as cost_code_name',
                 'cc.parent_code',

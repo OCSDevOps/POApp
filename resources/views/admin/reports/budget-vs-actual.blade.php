@@ -163,7 +163,7 @@
                                     @foreach($reportData as $row)
                                     <tr class="cost-code-level-{{ $row->level }}">
                                         <td>
-                                            <a href="{{ route('admin.reports.budget-drilldown', [$selectedProjectId, $row->cost_code]) }}">
+                                            <a href="{{ route('admin.reports.budget-drilldown', [$selectedProjectId, $row->cc_id]) }}">
                                                 {{ $row->cost_code }}
                                             </a>
                                         </td>
