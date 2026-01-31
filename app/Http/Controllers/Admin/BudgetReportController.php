@@ -3,12 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\ReportExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 
 class BudgetReportController extends Controller
 {
+    protected $exportService;
+    
+    public function __construct(ReportExportService $exportService)
+    {
+        $this->exportService = $exportService;
+    }
     /**
      * Display budget vs actual report with project selection
      */
