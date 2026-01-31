@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PurchaseOrder extends Model
 {
-    use HasFactory;
+    use HasFactory, CompanyScope;
 
     protected $table = 'purchase_order_master';
     protected $primaryKey = 'porder_id';
@@ -36,14 +36,6 @@ class PurchaseOrder extends Model
         'procore_po_id',
         'company_id',
     ];
-
-    /**
-     * Boot method to apply global scope.
-     */
-    protected static function booted()
-    {
-        static::addGlobalScope(new CompanyScope);
-    }
 
     /**
      * Get the company that owns the purchase order.

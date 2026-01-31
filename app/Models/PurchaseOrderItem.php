@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PurchaseOrderItem extends Model
 {
-    use HasFactory;
+    use HasFactory, CompanyScope;
 
     protected $table = 'purchase_order_details';
     protected $primaryKey = 'po_detail_id';
@@ -42,14 +42,6 @@ class PurchaseOrderItem extends Model
         'po_detail_createdate' => 'datetime',
         'expected_backorder_date' => 'date',
     ];
-
-    /**
-     * Boot the model and apply global scope.
-     */
-    protected static function booted()
-    {
-        static::addGlobalScope(new CompanyScope);
-    }
 
     /**
      * Get the purchase order for this item.

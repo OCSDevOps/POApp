@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Checklist extends Model
 {
+    use CompanyScope;
     protected $table = 'checklist_master';
     protected $primaryKey = 'cl_id';
     public $timestamps = false;
@@ -27,14 +28,6 @@ class Checklist extends Model
         'modified_date',
         'company_id',
     ];
-
-    /**
-     * Boot the model and apply global scope.
-     */
-    protected static function booted()
-    {
-        static::addGlobalScope(new CompanyScope);
-    }
 
     public function items()
     {

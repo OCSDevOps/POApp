@@ -3,10 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 
 class PoChangeOrder extends Model
 {
+    use CompanyScope;
     protected $table = 'po_change_orders';
     protected $primaryKey = 'poco_id';
     
@@ -40,12 +41,10 @@ class PoChangeOrder extends Model
     ];
 
     /**
-     * Boot the model and apply global scope.
+     * Boot the model.
      */
     protected static function booted()
     {
-        static::addGlobalScope(new CompanyScope);
-        
         // Auto-generate PCO number on creation
         static::creating(function ($model) {
             if (empty($model->poco_number)) {

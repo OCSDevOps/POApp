@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Supplier extends Model
 {
-    use HasFactory;
+    use HasFactory, CompanyScope;
 
     protected $table = 'supplier_master';
     protected $primaryKey = 'sup_id';
@@ -34,14 +34,6 @@ class Supplier extends Model
         'procore_supplier_id',
         'company_id',
     ];
-
-    /**
-     * Boot method to apply global scope.
-     */
-    protected static function booted()
-    {
-        static::addGlobalScope(new CompanyScope);
-    }
 
     /**
      * Get the company that owns the supplier.

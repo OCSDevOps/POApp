@@ -3,10 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 
 class BudgetChangeOrder extends Model
 {
+    use CompanyScope;
     protected $table = 'budget_change_orders';
     protected $primaryKey = 'bco_id';
     
@@ -40,12 +41,10 @@ class BudgetChangeOrder extends Model
     ];
 
     /**
-     * Boot the model and apply global scope.
+     * Boot the model.
      */
     protected static function booted()
     {
-        static::addGlobalScope(new CompanyScope);
-        
         // Auto-generate BCO number on creation
         static::creating(function ($model) {
             if (empty($model->bco_number)) {

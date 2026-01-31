@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class IntegrationSyncLog extends Model
 {
-    use HasFactory;
+    use HasFactory, CompanyScope;
 
     protected $table = 'integration_sync_logs';
     protected $primaryKey = 'id';
@@ -42,11 +42,6 @@ class IntegrationSyncLog extends Model
         'completed_at' => 'datetime',
         'duration_seconds' => 'integer',
     ];
-
-    protected static function booted()
-    {
-        static::addGlobalScope(new CompanyScope);
-    }
 
     /**
      * Get the integration that owns this log.

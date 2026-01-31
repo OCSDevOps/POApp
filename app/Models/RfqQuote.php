@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class RfqQuote extends Model
 {
-    use HasFactory;
+    use HasFactory, CompanyScope;
 
     protected $table = 'rfq_quotes';
     protected $primaryKey = 'rfqq_id';
@@ -31,11 +31,6 @@ class RfqQuote extends Model
         'rfqq_created_at' => 'datetime',
         'company_id' => 'integer',
     ];
-
-    protected static function booted()
-    {
-        static::addGlobalScope(new CompanyScope);
-    }
 
     /**
      * Get the RFQ supplier entry.

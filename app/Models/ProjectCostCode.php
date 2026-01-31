@@ -3,10 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 
 class ProjectCostCode extends Model
 {
+    use CompanyScope;
     protected $table = 'project_cost_codes';
     protected $primaryKey = 'id';
     
@@ -23,14 +24,6 @@ class ProjectCostCode extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
-
-    /**
-     * Boot the model and apply global scope.
-     */
-    protected static function booted()
-    {
-        static::addGlobalScope(new CompanyScope);
-    }
 
     /**
      * Get the project this assignment belongs to.

@@ -3,10 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 
 class ApprovalWorkflow extends Model
 {
+    use CompanyScope;
     protected $table = 'approval_workflows';
     protected $primaryKey = 'workflow_id';
     
@@ -32,14 +33,6 @@ class ApprovalWorkflow extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
-
-    /**
-     * Boot the model and apply global scope.
-     */
-    protected static function booted()
-    {
-        static::addGlobalScope(new CompanyScope);
-    }
 
     /**
      * Get the company this workflow belongs to.

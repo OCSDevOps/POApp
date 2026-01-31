@@ -3,10 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 
 class ProjectRole extends Model
 {
+    use CompanyScope;
     protected $table = 'project_roles';
     protected $primaryKey = 'role_id';
     
@@ -45,14 +46,6 @@ class ProjectRole extends Model
     const ROLE_FINANCE = 'Finance';
     const ROLE_EXECUTIVE = 'Executive';
     const ROLE_ADMIN = 'Admin';
-
-    /**
-     * Boot the model and apply global scope.
-     */
-    protected static function booted()
-    {
-        static::addGlobalScope(new CompanyScope);
-    }
 
     /**
      * Get the project this role belongs to.

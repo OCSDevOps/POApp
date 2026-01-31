@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ItemPricing extends Model
 {
-    use HasFactory;
+    use HasFactory, CompanyScope;
 
     protected $table = 'item_pricing';
     protected $primaryKey = 'pricing_id';
@@ -31,11 +31,6 @@ class ItemPricing extends Model
         'effective_to' => 'date',
         'status' => 'integer',
     ];
-
-    protected static function booted()
-    {
-        static::addGlobalScope(new CompanyScope);
-    }
 
     public function item()
     {

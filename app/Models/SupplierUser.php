@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\CompanyScope;
+use App\Traits\CompanyScope;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -10,7 +10,7 @@ use Illuminate\Notifications\Notifiable;
 
 class SupplierUser extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, CompanyScope;
 
     protected $table = 'supplier_users';
     protected $primaryKey = 'id';
@@ -42,14 +42,6 @@ class SupplierUser extends Authenticatable implements MustVerifyEmail
         'company_id' => 'integer',
         'supplier_id' => 'integer',
     ];
-
-    /**
-     * Apply company scope automatically.
-     */
-    protected static function booted()
-    {
-        static::addGlobalScope(new CompanyScope);
-    }
 
     /**
      * Relationship to supplier master record.
