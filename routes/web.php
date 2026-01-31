@@ -381,6 +381,28 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::get('/history/entity', [\App\Http\Controllers\Admin\ApprovalController::class, 'getHistory'])->name('history');
         Route::get('/statistics', [\App\Http\Controllers\Admin\ApprovalController::class, 'getStatistics'])->name('statistics');
     });
+
+    // Project Role Management
+    Route::prefix('project-roles')->name('project-roles.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ProjectRoleController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\ProjectRoleController::class, 'store'])->name('store');
+        Route::put('/{id}', [\App\Http\Controllers\Admin\ProjectRoleController::class, 'update'])->name('update');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\ProjectRoleController::class, 'destroy'])->name('destroy');
+        
+        // AJAX: Get users by role
+        Route::get('/users-by-role', [\App\Http\Controllers\Admin\ProjectRoleController::class, 'getUsersByRole'])->name('users-by-role');
+    });
+
+    // Approval Workflow Management
+    Route::prefix('approval-workflows')->name('approval-workflows.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ApprovalWorkflowController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\ApprovalWorkflowController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\ApprovalWorkflowController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [\App\Http\Controllers\Admin\ApprovalWorkflowController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [\App\Http\Controllers\Admin\ApprovalWorkflowController::class, 'update'])->name('update');
+        Route::post('/{id}/toggle-status', [\App\Http\Controllers\Admin\ApprovalWorkflowController::class, 'toggleStatus'])->name('toggle-status');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\ApprovalWorkflowController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Procore Webhook (No auth required)
