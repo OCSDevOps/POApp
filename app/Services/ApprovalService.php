@@ -10,6 +10,7 @@ use App\Models\PurchaseOrder;
 use App\Models\Budget;
 use App\Models\ProjectRole;
 use App\Models\User;
+use App\Notifications\ApprovalPendingNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -98,8 +99,21 @@ class ApprovalService
                 $request->save();
                 
                 // Send notifications to approvers
-                // TODO: Implement notification logic
-                // Notification::send($approvers, new ApprovalRequestNotification($request));
+                $approverUsers = $approvers->map->user->filter();
+                if ($approverUsers->isNotEmpty()) {
+                    Notification::send($approverUsers, new ApprovalPendingNotification(
+                        $request,
+                        $entityType,
+                        $entityNumber,
+                        $amount,
+                        1 // Level 1
+                    ));
+                    
+                    Log::info('Approval notifications sent', [
+                        'request_id' => $request->ar_id,
+                        'recipients' => $approverUsers->count(),
+                    ]);
+                }
             }
             
             DB::commit();

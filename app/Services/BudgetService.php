@@ -8,8 +8,12 @@ use App\Models\PurchaseOrder;
 use App\Models\Project;
 use App\Models\CostCode;
 use App\Models\ProjectCostCode;
+use App\Models\ProjectRole;
+use App\Models\User;
+use App\Notifications\BudgetWarningNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Budget Management Service
@@ -286,6 +290,9 @@ class BudgetService
         if ($budget) {
             $budget->budget_committed += $poAmount;
             $budget->save();
+
+            // Check budget thresholds and send warnings
+            $this->checkBudgetThresholds($budget);
         }
     }
 
@@ -301,6 +308,98 @@ class BudgetService
         if ($budget) {
             $budget->budget_actual += $actualAmount;
             $budget->save();
+
+            // Check budget thresholds and send warnings
+            $this->checkBudgetThresholds($budget);
+        }
+    }
+
+    /**
+     * Check budget utilization and send warning notifications.
+     */
+    protected function checkBudgetThresholds(Budget $budget): void
+    {
+        $currentBudget = $budget->budget_original_amount + $budget->budget_change_orders_total;
+        if ($currentBudget <= 0) {
+            return;
+        }
+
+        $totalSpent = $budget->budget_committed + $budget->budget_actual;
+        $utilizationPercent = round(($totalSpent / $currentBudget) * 100, 2);
+
+        $warningThreshold = $budget->budget_warning_threshold ?? 75;
+        $criticalThreshold = $budget->budget_critical_threshold ?? 90;
+
+        // Send notifications if thresholds are crossed
+        $shouldNotify = false;
+        $threshold = null;
+
+        if ($utilizationPercent >= $criticalThreshold && !$budget->critical_notification_sent) {
+            $shouldNotify = true;
+            $threshold = $criticalThreshold;
+            $budget->critical_notification_sent = true;
+            $budget->save();
+        } elseif ($utilizationPercent >= $warningThreshold && $utilizationPercent < $criticalThreshold && !$budget->warning_notification_sent) {
+            $shouldNotify = true;
+            $threshold = $warningThreshold;
+            $budget->warning_notification_sent = true;
+            $budget->save();
+        }
+
+        if ($shouldNotify) {
+            $this->sendBudgetWarning($budget, $utilizationPercent, $threshold);
+        }
+    }
+
+    /**
+     * Send budget warning notification to relevant users.
+     */
+    protected function sendBudgetWarning(Budget $budget, $utilizationPercent, $threshold): void
+    {
+        try {
+            $project = $budget->project;
+            $costCode = $budget->costCode;
+
+            // Get users to notify: Project Managers, Finance, and Executives with approval rights
+            $projectRoles = ProjectRole::where('pr_project_id', $budget->budget_project_ms)
+                ->whereIn('pr_role', ['project_manager', 'finance', 'executive', 'director'])
+                ->where('pr_can_approve', true)
+                ->with('user')
+                ->get();
+
+            $users = $projectRoles->pluck('user')->filter();
+
+            // Also notify the project creator if not already in the list
+            if ($project->proj_created_by) {
+                $creator = User::find($project->proj_created_by);
+                if ($creator && !$users->contains('u_id', $creator->u_id)) {
+                    $users->push($creator);
+                }
+            }
+
+            // Send notifications
+            if ($users->isNotEmpty()) {
+                Notification::send($users, new BudgetWarningNotification(
+                    $project,
+                    $costCode,
+                    $budget,
+                    $utilizationPercent,
+                    $threshold
+                ));
+
+                Log::info('Budget warning sent', [
+                    'project_id' => $budget->budget_project_ms,
+                    'cost_code' => $costCode->cc_no,
+                    'utilization' => $utilizationPercent,
+                    'threshold' => $threshold,
+                    'recipients' => $users->count(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send budget warning', [
+                'budget_id' => $budget->budget_id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
