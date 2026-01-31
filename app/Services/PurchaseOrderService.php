@@ -422,6 +422,33 @@ class PurchaseOrderService
             // Update PO delivery status
             $this->updatePoDeliveryStatus($po);
 
+            // Update budget actual amounts (track committed → actual transition)
+            foreach ($items as $item) {
+                $poItem = PurchaseOrderItem::where('po_detail_porder_ms', $poId)
+                    ->where('po_detail_item', $item['item_code'])
+                    ->first();
+
+                if ($poItem && !empty($poItem->po_detail_ccode)) {
+                    $itemCost = $item['quantity'] * $poItem->po_detail_unitprice;
+                    
+                    // Update budget actual amount
+                    $budget = Budget::where('budget_proj_ms', $po->porder_project_ms)
+                        ->where('budget_ccode', $poItem->po_detail_ccode)
+                        ->first();
+
+                    if ($budget) {
+                        $budget->increment('actual', $itemCost);
+                        
+                        Log::info('Budget actual updated', [
+                            'project_id' => $po->porder_project_ms,
+                            'cost_code' => $poItem->po_detail_ccode,
+                            'amount' => $itemCost,
+                            'receive_order' => $receiveOrder->rorder_id
+                        ]);
+                    }
+                }
+            }
+
             DB::commit();
             return $receiveOrder;
 
