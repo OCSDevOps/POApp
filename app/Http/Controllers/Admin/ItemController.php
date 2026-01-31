@@ -12,6 +12,7 @@ use App\Models\UnitOfMeasure;
 use App\Services\PurchaseOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class ItemController extends Controller
 {
@@ -95,6 +96,7 @@ class ItemController extends Controller
                 'item_createdate' => now(),
                 'item_createby' => auth()->id(),
                 'item_status' => 1,
+                'company_id' => session('company_id'),
             ]);
 
             return redirect()->route('admin.item.index')
@@ -111,6 +113,8 @@ class ItemController extends Controller
     public function show($id)
     {
         $item = Item::with(['category', 'costCode', 'unitOfMeasure'])->findOrFail($id);
+
+        abort_unless($item->company_id === session('company_id'), 403);
 
         // Get supplier catalog entries
         $supplierCatalog = SupplierCatalog::where('supcat_item_code', $item->item_code)
@@ -129,6 +133,7 @@ class ItemController extends Controller
         // Get pricing summary from view
         $pricingSummary = DB::table('vw_item_pricing_summary')
             ->where('item_id', $id)
+            ->where('company_id', session('company_id'))
             ->first();
 
         return view('admin.item.show', compact('item', 'supplierCatalog', 'priceHistory', 'pricingSummary'));
@@ -140,6 +145,9 @@ class ItemController extends Controller
     public function edit($id)
     {
         $item = Item::findOrFail($id);
+
+        abort_unless($item->company_id === session('company_id'), 403);
+
         $categories = ItemCategory::active()->orderByName()->get();
         $costCodes = CostCode::active()->orderByCode()->get();
         $uoms = UnitOfMeasure::active()->orderByName()->get();
@@ -153,6 +161,8 @@ class ItemController extends Controller
     public function update(Request $request, $id)
     {
         $item = Item::findOrFail($id);
+
+        abort_unless($item->company_id === session('company_id'), 403);
 
         $request->validate([
             'item_code' => 'required|string|max:50|unique:item_master,item_code,' . $id . ',item_id',
@@ -192,9 +202,12 @@ class ItemController extends Controller
     {
         $item = Item::findOrFail($id);
 
+        abort_unless($item->company_id === session('company_id'), 403);
+
         // Check if item is used in any PO
         $usedInPo = DB::table('porder_detail')
             ->where('po_detail_item', $item->item_code)
+            ->where('company_id', session('company_id'))
             ->exists();
 
         if ($usedInPo) {
@@ -222,6 +235,9 @@ class ItemController extends Controller
     public function priceComparison($id)
     {
         $item = Item::findOrFail($id);
+
+        abort_unless($item->company_id === session('company_id'), 403);
+
         $comparison = $this->poService->getPriceComparison($item->item_code);
 
         return view('admin.item.price_comparison', compact('item', 'comparison'));
@@ -233,6 +249,9 @@ class ItemController extends Controller
     public function priceHistory($id, Request $request)
     {
         $item = Item::findOrFail($id);
+
+        abort_unless($item->company_id === session('company_id'), 403);
+
         $history = $this->poService->getItemPriceHistory($id, $request->supplier_id);
 
         return view('admin.item.price_history', compact('item', 'history'));
@@ -251,6 +270,8 @@ class ItemController extends Controller
         ]);
 
         $item = Item::findOrFail($id);
+
+        abort_unless($item->company_id === session('company_id'), 403);
 
         // Get current price
         $catalog = SupplierCatalog::where('supcat_item_code', $item->item_code)
@@ -281,7 +302,8 @@ class ItemController extends Controller
      */
     public function pricingSummary(Request $request)
     {
-        $query = DB::table('vw_item_pricing_summary');
+        $query = DB::table('vw_item_pricing_summary')
+            ->where('company_id', session('company_id'));
 
         if ($request->filled('category_id')) {
             $query->where('item_cat_ms', $request->category_id);
@@ -334,6 +356,7 @@ class ItemController extends Controller
                                 'item_createdate' => now(),
                                 'item_createby' => auth()->id(),
                                 'item_status' => 1,
+                                'company_id' => session('company_id'),
                             ]
                         );
                         $imported++;

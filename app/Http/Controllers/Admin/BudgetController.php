@@ -8,6 +8,7 @@ use App\Models\CostCode;
 use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class BudgetController extends Controller
 {
@@ -37,6 +38,7 @@ class BudgetController extends Controller
 
         // Get budget summary
         $summary = DB::table('vw_budget_summary')
+            ->where('company_id', session('company_id'))
             ->when($request->filled('project_id'), function ($q) use ($request) {
                 return $q->where('proj_id', $request->project_id);
             })
@@ -93,6 +95,7 @@ class BudgetController extends Controller
                 'budget_status' => 1,
                 'budget_created_by' => auth()->id(),
                 'budget_created_at' => now(),
+                'company_id' => session('company_id'),
             ]);
 
             return redirect()->route('admin.budget.index')
@@ -109,11 +112,13 @@ class BudgetController extends Controller
     public function show($id)
     {
         $budget = Budget::with(['project', 'costCode'])->findOrFail($id);
+        abort_unless($budget->company_id === session('company_id'), 403);
 
         // Get related purchase orders
         $purchaseOrders = DB::table('porder_master')
             ->join('porder_detail', 'porder_master.porder_id', '=', 'porder_detail.po_detail_porder_ms')
             ->join('item_master', 'porder_detail.po_detail_item', '=', 'item_master.item_code')
+            ->where('porder_master.company_id', session('company_id'))
             ->where('porder_master.porder_project_ms', $budget->budget_project_id)
             ->where('item_master.item_ccode_ms', $budget->budget_cost_code_id)
             ->select('porder_master.*', DB::raw('SUM(porder_detail.po_detail_total) as total_amount'))
@@ -129,6 +134,7 @@ class BudgetController extends Controller
     public function edit($id)
     {
         $budget = Budget::findOrFail($id);
+        abort_unless($budget->company_id === session('company_id'), 403);
         $projects = Project::active()->orderByName()->get();
         $costCodes = CostCode::active()->orderByCode()->get();
 
@@ -141,6 +147,7 @@ class BudgetController extends Controller
     public function update(Request $request, $id)
     {
         $budget = Budget::findOrFail($id);
+        abort_unless($budget->company_id === session('company_id'), 403);
 
         $request->validate([
             'revised_amount' => 'required|numeric|min:0',
@@ -177,6 +184,7 @@ class BudgetController extends Controller
     public function destroy($id)
     {
         $budget = Budget::findOrFail($id);
+        abort_unless($budget->company_id === session('company_id'), 403);
 
         // Don't allow deletion if there are commitments
         if ($budget->budget_committed_amount > 0) {
@@ -245,7 +253,8 @@ class BudgetController extends Controller
      */
     public function summary(Request $request)
     {
-        $query = DB::table('vw_budget_summary');
+        $query = DB::table('vw_budget_summary')
+            ->where('company_id', session('company_id'));
 
         if ($request->filled('project_id')) {
             $query->where('proj_id', $request->project_id);

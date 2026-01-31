@@ -83,11 +83,11 @@ class PurchaseOrderController extends Controller
         $items = Item::active()->nonRentable()->orderByName()->get();
         $projects = Project::active()->orderByName()->get();
         $suppliers = Supplier::active()->orderByName()->get();
-        $packages = DB::table('item_package_master')->orderBy('ipack_name', 'ASC')->get();
-        $taxGroups = DB::table('taxgroup_master')->orderBy('id', 'ASC')->get();
+        $packages = \App\Models\ItemPackage::orderBy('ipack_name', 'ASC')->get();
+        $taxGroups = \App\Models\TaxGroup::orderBy('id', 'ASC')->get();
         $costCodes = CostCode::orderById()->get();
         $categories = ItemCategory::orderBy('icat_id', 'ASC')->get();
-        $uoms = DB::table('unit_of_measure_tab')->orderBy('uom_id', 'ASC')->get();
+        $uoms = UnitOfMeasure::orderBy('uom_id', 'ASC')->get();
 
         // Get budget info for display
         $budgetInfo = [];
@@ -153,6 +153,7 @@ class PurchaseOrderController extends Controller
                         'porder_item_tax' => $itemTax,
                         'porder_item_total' => $itemTotal + $itemTax,
                         'porder_item_ccode' => $item['cost_code'] ?? null,
+                        'company_id' => session('company_id'),
                     ]);
 
                     $total += $itemTotal;
@@ -252,14 +253,19 @@ class PurchaseOrderController extends Controller
     {
         $purchaseOrder = PurchaseOrder::with(['items'])->findOrFail($id);
         
+        // Authorization: Ensure user can only edit their company's POs
+        if (!$purchaseOrder->isOwnedByCurrentCompany()) {
+            abort(403, 'Unauthorized access to another company\'s purchase order');
+        }
+        
         $items = Item::active()->nonRentable()->orderByName()->get();
         $projects = Project::active()->orderByName()->get();
         $suppliers = Supplier::active()->orderByName()->get();
-        $packages = DB::table('item_package_master')->orderBy('ipack_name', 'ASC')->get();
-        $taxGroups = DB::table('taxgroup_master')->orderBy('id', 'ASC')->get();
+        $packages = \App\Models\ItemPackage::orderBy('ipack_name', 'ASC')->get();
+        $taxGroups = \App\Models\TaxGroup::orderBy('id', 'ASC')->get();
         $costCodes = CostCode::orderById()->get();
         $categories = ItemCategory::orderBy('icat_id', 'ASC')->get();
-        $uoms = DB::table('unit_of_measure_tab')->orderBy('uom_id', 'ASC')->get();
+        $uoms = UnitOfMeasure::orderBy('uom_id', 'ASC')->get();
 
         return view('admin.porder.edit_pur_order', compact(
             'purchaseOrder', 'items', 'projects', 'suppliers', 
@@ -282,6 +288,11 @@ class PurchaseOrderController extends Controller
         DB::beginTransaction();
         try {
             $purchaseOrder = PurchaseOrder::findOrFail($id);
+            
+            // Authorization: Ensure user can only update their company's POs
+            if (!$purchaseOrder->isOwnedByCurrentCompany()) {
+                abort(403, 'Unauthorized access to another company\'s purchase order');
+            }
 
             $purchaseOrder->update([
                 'porder_project_ms' => $request->po_project,
@@ -298,6 +309,7 @@ class PurchaseOrderController extends Controller
             // Delete existing items and re-add
             DB::table('purchase_order_items')
                 ->where('porder_item_porder_ms', $id)
+                ->where('company_id', session('company_id'))
                 ->delete();
 
             // Process items
@@ -318,6 +330,7 @@ class PurchaseOrderController extends Controller
                         'porder_item_tax' => $itemTax,
                         'porder_item_total' => $itemTotal + $itemTax,
                         'porder_item_ccode' => $item['cost_code'] ?? null,
+                        'company_id' => session('company_id'),
                     ]);
 
                     $total += $itemTotal;
@@ -378,14 +391,19 @@ class PurchaseOrderController extends Controller
      */
     public function destroy($id)
     {
+        // Authorization check
+        $purchaseOrder = PurchaseOrder::findOrFail($id);
+        abort_unless($purchaseOrder->company_id === session('company_id'), 403, 'Unauthorized access');
+
         DB::beginTransaction();
         try {
-            // Delete items first
+            // Delete items first (with company scope)
             DB::table('purchase_order_items')
                 ->where('porder_item_porder_ms', $id)
+                ->where('company_id', session('company_id'))
                 ->delete();
 
-            PurchaseOrder::destroy($id);
+            $purchaseOrder->delete();
 
             DB::commit();
             return redirect()->route('admin.porder.index')

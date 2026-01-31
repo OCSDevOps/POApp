@@ -54,6 +54,7 @@ class SupplierController extends Controller
             'sup_status' => 1,
             'sup_created_by' => Auth::id(),
             'sup_created_at' => now(),
+            'company_id' => session('company_id'),
         ]);
 
         return redirect()->route('admin.suppliers.index')
@@ -66,6 +67,7 @@ class SupplierController extends Controller
     public function show($id)
     {
         $supplier = Supplier::with('catalogItems')->findOrFail($id);
+        abort_unless($supplier->company_id === session('company_id'), 403, 'Unauthorized access');
         
         return view('admin.supplier.view_supplier', compact('supplier'));
     }
@@ -76,6 +78,7 @@ class SupplierController extends Controller
     public function edit($id)
     {
         $supplier = Supplier::findOrFail($id);
+        abort_unless($supplier->company_id === session('company_id'), 403, 'Unauthorized access');
         
         return view('admin.supplier.edit_supplier', compact('supplier'));
     }
@@ -92,6 +95,7 @@ class SupplierController extends Controller
         ]);
 
         $supplier = Supplier::findOrFail($id);
+        abort_unless($supplier->company_id === session('company_id'), 403, 'Unauthorized access');
 
         $supplier->update([
             'sup_name' => $request->sup_name,
@@ -134,16 +138,20 @@ class SupplierController extends Controller
      */
     public function destroy($id)
     {
+        $supplier = Supplier::findOrFail($id);
+        abort_unless($supplier->company_id === session('company_id'), 403, 'Unauthorized access');
+
         // Check if supplier has purchase orders
         $hasPO = DB::table('purchase_order_master')
             ->where('porder_supplier_ms', $id)
+            ->where('company_id', session('company_id'))
             ->exists();
 
         if ($hasPO) {
             return back()->with('error', 'Cannot delete supplier with existing purchase orders.');
         }
 
-        Supplier::destroy($id);
+        $supplier->delete();
 
         return redirect()->route('admin.suppliers.index')
             ->with('success', 'Supplier deleted successfully.');

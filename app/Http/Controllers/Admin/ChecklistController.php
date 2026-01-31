@@ -8,6 +8,7 @@ use App\Models\ChecklistItem;
 use App\Models\Equipment;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
 
 class ChecklistController extends Controller
 {
@@ -42,6 +43,7 @@ class ChecklistController extends Controller
             'cl_start_date' => $request->cl_start_date,
             'status' => 1,
             'created_date' => now(),
+            'company_id' => session('company_id'),
         ]);
 
         foreach ($request->items as $itemText) {
@@ -56,8 +58,16 @@ class ChecklistController extends Controller
         return redirect()->route('admin.checklists.index')->with('success', 'Checklist created.');
     }
 
+    public function show(Checklist $checklist)
+    {
+        abort_unless($checklist->company_id === session('company_id'), 403);
+        $checklist->load('items');
+        return view('admin.checklists.show', compact('checklist'));
+    }
+
     public function edit(Checklist $checklist)
     {
+        abort_unless($checklist->company_id === session('company_id'), 403);
         $checklist->load('items');
         $equipments = Equipment::active()->orderBy('eq_id', 'desc')->get();
         $users = User::orderBy('name')->get();
@@ -66,6 +76,8 @@ class ChecklistController extends Controller
 
     public function update(Request $request, Checklist $checklist)
     {
+        abort_unless($checklist->company_id === session('company_id'), 403);
+
         $request->validate([
             'cl_name' => 'required|string|max:255',
             'cl_frequency' => 'nullable|string|max:100',
@@ -99,6 +111,7 @@ class ChecklistController extends Controller
 
     public function destroy(Checklist $checklist)
     {
+        abort_unless($checklist->company_id === session('company_id'), 403);
         $checklist->delete();
         return back()->with('success', 'Checklist deleted.');
     }

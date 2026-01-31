@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use App\Models\Project;
 
 class ProjectController extends Controller
@@ -51,6 +52,7 @@ class ProjectController extends Controller
             'proj_status' => 1,
             'proj_created_by' => Auth::id(),
             'proj_created_at' => now(),
+            'company_id' => session('company_id'),
         ]);
 
         return redirect()->route('admin.projects.index')
@@ -64,6 +66,8 @@ class ProjectController extends Controller
     {
         $project = Project::with('details')->findOrFail($id);
         
+        abort_unless($project->company_id === session('company_id'), 403);
+        
         return view('admin.project.view_project', compact('project'));
     }
 
@@ -73,6 +77,8 @@ class ProjectController extends Controller
     public function edit($id)
     {
         $project = Project::findOrFail($id);
+        
+        abort_unless($project->company_id === session('company_id'), 403);
         
         return view('admin.project.edit_project', compact('project'));
     }
@@ -88,6 +94,8 @@ class ProjectController extends Controller
         ]);
 
         $project = Project::findOrFail($id);
+        
+        abort_unless($project->company_id === session('company_id'), 403);
 
         $project->update([
             'proj_name' => $request->proj_name,
@@ -128,16 +136,21 @@ class ProjectController extends Controller
      */
     public function destroy($id)
     {
+        $project = Project::findOrFail($id);
+        
+        abort_unless($project->company_id === session('company_id'), 403);
+        
         // Check if project has purchase orders
         $hasPO = DB::table('purchase_order_master')
             ->where('porder_project_ms', $id)
+            ->where('company_id', session('company_id'))
             ->exists();
 
         if ($hasPO) {
             return back()->with('error', 'Cannot delete project with existing purchase orders.');
         }
 
-        Project::destroy($id);
+        $project->delete();
 
         return redirect()->route('admin.projects.index')
             ->with('success', 'Project deleted successfully.');
