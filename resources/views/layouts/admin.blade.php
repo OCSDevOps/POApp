@@ -186,6 +186,15 @@
                 </a>
             </li>
             
+            @if(session('u_type') == 1)
+                <li class="nav-item">
+                    <a href="{{ route('admin.companies.index') }}" class="nav-link {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}">
+                        <i class="fas fa-building"></i>
+                        <span>Companies</span>
+                    </a>
+                </li>
+            @endif
+            
             <hr class="sidebar-divider my-2 bg-light opacity-25">
             
             <li class="nav-item">
@@ -207,6 +216,48 @@
             
             <div class="d-flex align-items-center">
                 <span class="me-3">Welcome, {{ Auth::user()->name ?? 'Admin' }}</span>
+                
+                @if(session('u_type') == 1)
+                    <!-- Company Switcher (Super Admin Only) -->
+                    <div class="dropdown me-3">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-building me-1"></i>
+                            @php
+                                $currentCompany = App\Models\Company::find(session('company_id'));
+                            @endphp
+                            {{ $currentCompany ? $currentCompany->name : 'No Company' }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header">Switch Company</h6></li>
+                            @php
+                                $companies = App\Models\Company::where('status', 1)->orderBy('name')->get();
+                            @endphp
+                            @foreach($companies as $company)
+                                <li>
+                                    @if($company->id == session('company_id'))
+                                        <span class="dropdown-item active">
+                                            <i class="fas fa-check me-2"></i>{{ $company->name }}
+                                        </span>
+                                    @else
+                                        <form action="{{ route('admin.companies.switch', $company) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fas fa-exchange-alt me-2"></i>{{ $company->name }}
+                                            </button>
+                                        </form>
+                                    @endif
+                                </li>
+                            @endforeach
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('admin.companies.index') }}">
+                                    <i class="fas fa-cog me-2"></i>Manage Companies
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                @endif
+                
                 <div class="dropdown">
                     <button class="btn btn-link dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="fas fa-user-circle fa-lg"></i>

@@ -3,6 +3,21 @@
 @section('title', 'Dashboard')
 
 @section('content')
+<!-- Company Context Indicator (Super Admin Only) -->
+@if(session('u_type') == 1 && session('company_id'))
+    @php
+        $currentCompany = App\Models\Company::find(session('company_id'));
+    @endphp
+    @if($currentCompany)
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fas fa-building me-2"></i>
+            <strong>Active Company Context:</strong> {{ $currentCompany->name }}
+            <span class="text-muted ms-2">(All data shown below is scoped to this company)</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+@endif
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
     <div>
