@@ -79,4 +79,109 @@ class CostCodeController extends Controller
 
         return redirect()->route('admin.costcodes.index')->with('success', 'Cost code deleted successfully.');
     }
+
+    /**
+     * Display hierarchical cost code structure.
+     */
+    public function hierarchy()
+    {
+        // Get all cost codes organized by hierarchy
+        $rootCodes = CostCode::whereNull('parent_code')
+            ->orWhere('parent_code', '')
+            ->orderBy('full_code')
+            ->get();
+
+        // Build hierarchy tree
+        $hierarchy = $this->buildHierarchyTree($rootCodes);
+
+        return view('admin.costcodes.hierarchy', compact('hierarchy', 'rootCodes'));
+    }
+
+    /**
+     * Store a hierarchical cost code.
+     */
+    public function storeHierarchical(Request $request)
+    {
+        $validated = $request->validate([
+            'category_code' => 'required|string|max:10',
+            'subcategory_code' => 'nullable|string|max:10',
+            'detail_code' => 'nullable|string|max:10',
+            'description' => 'required|string|max:500',
+            'parent_code' => 'nullable|string|max:50',
+        ]);
+
+        // Build full code (XX-XX-XX format)
+        $fullCode = $validated['category_code'];
+        $level = 1;
+
+        if (!empty($validated['subcategory_code'])) {
+            $fullCode .= '-' . $validated['subcategory_code'];
+            $level = 2;
+        }
+
+        if (!empty($validated['detail_code'])) {
+            $fullCode .= '-' . $validated['detail_code'];
+            $level = 3;
+        }
+
+        // Check if code already exists
+        if (CostCode::where('full_code', $fullCode)->exists()) {
+            return back()->withInput()->with('error', 'Cost code already exists: ' . $fullCode);
+        }
+
+        CostCode::create([
+            'cc_no' => $fullCode,
+            'cc_description' => trim($validated['description']),
+            'parent_code' => $validated['parent_code'] ?? null,
+            'category_code' => $validated['category_code'],
+            'subcategory_code' => $validated['subcategory_code'] ?? null,
+            'full_code' => $fullCode,
+            'level' => $level,
+            'cc_status' => 1,
+            'cc_created_at' => Carbon::now(),
+            'cc_created_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Hierarchical cost code created: ' . $fullCode);
+    }
+
+    /**
+     * Get child codes for a parent (AJAX).
+     */
+    public function getChildCodes($parentCode)
+    {
+        $children = CostCode::where('parent_code', $parentCode)
+            ->orderBy('full_code')
+            ->get()
+            ->map(function ($code) {
+                return [
+                    'id' => $code->cc_id,
+                    'code' => $code->full_code,
+                    'cc_no' => $code->cc_no,
+                    'description' => $code->cc_description,
+                    'level' => $code->level,
+                    'has_children' => $code->children()->count() > 0,
+                ];
+            });
+
+        return response()->json($children);
+    }
+
+    /**
+     * Build hierarchy tree recursively.
+     */
+    protected function buildHierarchyTree($codes)
+    {
+        $tree = [];
+
+        foreach ($codes as $code) {
+            $node = [
+                'code' => $code,
+                'children' => $this->buildHierarchyTree($code->children),
+            ];
+            $tree[] = $node;
+        }
+
+        return $tree;
+    }
 }

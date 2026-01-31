@@ -251,6 +251,11 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::post('/', [CostCodeController::class, 'store'])->name('store');
         Route::put('/{costcode}', [CostCodeController::class, 'update'])->name('update');
         Route::delete('/{costcode}', [CostCodeController::class, 'destroy'])->name('destroy');
+        
+        // Hierarchical cost code management
+        Route::get('/hierarchy', [CostCodeController::class, 'hierarchy'])->name('hierarchy');
+        Route::post('/hierarchical', [CostCodeController::class, 'storeHierarchical'])->name('store-hierarchical');
+        Route::get('/{parentCode}/children', [CostCodeController::class, 'getChildCodes'])->name('children');
     });
 
     // Units of Measure
