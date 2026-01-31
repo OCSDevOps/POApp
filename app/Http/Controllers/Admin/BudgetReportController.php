@@ -238,4 +238,116 @@ class BudgetReportController extends Controller
             'alertsData'
         ));
     }
+    
+    /**
+     * Export budget vs actual report to CSV/Excel
+     */
+    public function export(Request $request)
+    {
+        $projectId = $request->get('project_id');
+        $format = $request->get('format', 'csv');
+        
+        if (!$projectId) {
+            return redirect()->route('admin.reports.budget-vs-actual')
+                ->with('error', 'Please select a project to export.');
+        }
+        
+        // Get project info
+        $project = DB::table('project_master')
+            ->where('proj_id', $projectId)
+            ->select('proj_name', 'proj_no')
+            ->first();
+        
+        if (!$project) {
+            return redirect()->route('admin.reports.budget-vs-actual')
+                ->with('error', 'Project not found.');
+        }
+        
+        // Get report data
+        $reportData = $this->getBudgetVsActualData($projectId);
+        $summary = $this->calculateSummary($reportData);
+        
+        // Generate filename
+        $filename = 'budget_report_' . str_replace(' ', '_', $project->proj_no) . '_' . now()->format('Y-m-d') . '.csv';
+        
+        // Generate CSV content
+        ob_start();
+        $output = fopen('php://output', 'w');
+        
+        // Add UTF-8 BOM for Excel
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+        
+        // Project info header
+        fputcsv($output, ['Budget vs Actual Report']);
+        fputcsv($output, ['Project:', $project->proj_name . ' (' . $project->proj_no . ')']);
+        fputcsv($output, ['Generated:', now()->format('Y-m-d H:i:s')]);
+        fputcsv($output, []); // Empty row
+        
+        // Summary section
+        if ($summary) {
+            fputcsv($output, ['Summary']);
+            fputcsv($output, ['Total Original Budget:', '$' . number_format($summary['total_original'], 2)]);
+            fputcsv($output, ['Total Revised Budget:', '$' . number_format($summary['total_revised'], 2)]);
+            fputcsv($output, ['Total Committed:', '$' . number_format($summary['total_committed'], 2)]);
+            fputcsv($output, ['Total Actual:', '$' . number_format($summary['total_actual'], 2)]);
+            fputcsv($output, ['Total Spent:', '$' . number_format($summary['total_spent'], 2)]);
+            fputcsv($output, ['Total Remaining:', '$' . number_format($summary['total_remaining'], 2)]);
+            fputcsv($output, ['Overall Utilization:', number_format($summary['overall_utilization'], 2) . '%']);
+            fputcsv($output, []); // Empty row
+        }
+        
+        // Data headers
+        fputcsv($output, [
+            'Cost Code',
+            'Description',
+            'Level',
+            'Original Budget',
+            'Revised Budget',
+            'Committed',
+            'Actual',
+            'Total Spent',
+            'Variance',
+            'Utilization %',
+            'Status'
+        ]);
+        
+        // Data rows
+        foreach ($reportData as $row) {
+            $status = 'On Track';
+            if ($row->utilization_pct >= 100) {
+                $status = 'Over Budget';
+            } elseif ($row->utilization_pct >= 90) {
+                $status = 'Critical';
+            } elseif ($row->utilization_pct >= 75) {
+                $status = 'At Risk';
+            }
+            
+            fputcsv($output, [
+                $row->cost_code,
+                $row->cost_code_name,
+                $row->level,
+                $row->original,
+                $row->revised,
+                $row->committed,
+                $row->actual,
+                $row->total_spent,
+                $row->variance,
+                number_format($row->utilization_pct, 2) . '%',
+                $status
+            ]);
+        }
+        
+        fclose($output);
+        $csvContent = ob_get_clean();
+        
+        // If PDF format requested, return print-friendly view
+        if ($format === 'pdf') {
+            return view('admin.reports.budget-vs-actual-pdf', compact('project', 'reportData', 'summary'));
+        }
+        
+        // Otherwise return CSV download
+        return response($csvContent)
+            ->header('Content-Type', 'text/csv; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
 }
