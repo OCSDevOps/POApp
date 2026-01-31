@@ -68,8 +68,15 @@ class CostCodeController extends Controller
      */
     public function destroy(CostCode $costcode)
     {
-        $canDelete = DB::table('purchase_order_items')->where('cc_id', $costcode->cc_id)->doesntExist()
-            && DB::table('budget_line_items')->where('cc_id', $costcode->cc_id)->doesntExist();
+        $companyId = session('company_id');
+        $canDelete = DB::table('purchase_order_items')
+                ->where('porder_item_ccode', $costcode->cc_id)
+                ->where('company_id', $companyId)
+                ->doesntExist()
+            && DB::table('budget_master')
+                ->where('budget_cost_code_id', $costcode->cc_id)
+                ->where('company_id', $companyId)
+                ->doesntExist();
 
         if (! $canDelete) {
             return redirect()->route('admin.costcodes.index')->with('error', 'Cost code is in use and cannot be deleted.');

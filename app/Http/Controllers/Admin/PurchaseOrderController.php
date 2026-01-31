@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
 use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\Item;
@@ -144,7 +145,7 @@ class PurchaseOrderController extends Controller
                     $itemTotal = $item['quantity'] * $item['price'];
                     $itemTax = $itemTotal * ($item['tax_rate'] ?? 0) / 100;
                     
-                    DB::table('purchase_order_items')->insert([
+                    PurchaseOrderItem::create([
                         'porder_item_porder_ms' => $purchaseOrder->porder_id,
                         'porder_item_code' => $item['code'],
                         'porder_item_name' => $item['name'],
@@ -153,7 +154,7 @@ class PurchaseOrderController extends Controller
                         'porder_item_tax' => $itemTax,
                         'porder_item_total' => $itemTotal + $itemTax,
                         'porder_item_ccode' => $item['cost_code'] ?? null,
-                        'company_id' => session('company_id'),
+                        // company_id auto-added by CompanyScope trait
                     ]);
 
                     $total += $itemTotal;
@@ -306,11 +307,8 @@ class PurchaseOrderController extends Controller
                 'porder_modified_at' => now(),
             ]);
 
-            // Delete existing items and re-add
-            DB::table('purchase_order_items')
-                ->where('porder_item_porder_ms', $id)
-                ->where('company_id', session('company_id'))
-                ->delete();
+            // Delete existing items and re-add (Eloquent automatically filters by company_id)
+            PurchaseOrderItem::where('porder_item_porder_ms', $id)->delete();
 
             // Process items
             if ($request->has('items')) {
@@ -321,7 +319,7 @@ class PurchaseOrderController extends Controller
                     $itemTotal = $item['quantity'] * $item['price'];
                     $itemTax = $itemTotal * ($item['tax_rate'] ?? 0) / 100;
                     
-                    DB::table('purchase_order_items')->insert([
+                    PurchaseOrderItem::create([
                         'porder_item_porder_ms' => $purchaseOrder->porder_id,
                         'porder_item_code' => $item['code'],
                         'porder_item_name' => $item['name'],
@@ -330,7 +328,7 @@ class PurchaseOrderController extends Controller
                         'porder_item_tax' => $itemTax,
                         'porder_item_total' => $itemTotal + $itemTax,
                         'porder_item_ccode' => $item['cost_code'] ?? null,
-                        'company_id' => session('company_id'),
+                        // company_id auto-added by CompanyScope trait
                     ]);
 
                     $total += $itemTotal;
@@ -397,11 +395,8 @@ class PurchaseOrderController extends Controller
 
         DB::beginTransaction();
         try {
-            // Delete items first (with company scope)
-            DB::table('purchase_order_items')
-                ->where('porder_item_porder_ms', $id)
-                ->where('company_id', session('company_id'))
-                ->delete();
+            // Delete items first (Eloquent automatically applies company scope)
+            PurchaseOrderItem::where('porder_item_porder_ms', $id)->delete();
 
             $purchaseOrder->delete();
 
@@ -456,12 +451,16 @@ class PurchaseOrderController extends Controller
      */
     public function getSupplierCatalogList(Request $request)
     {
+        $companyId = session('company_id');
+        
         $query = DB::table('supplier_catalog_tab as sc')
             ->join('item_master as im', 'im.item_code', '=', 'sc.supcat_item_code')
             ->join('item_category_tab as ic', 'ic.icat_id', '=', 'im.item_cat_ms')
             ->join('cost_code_master as cc', 'cc.cc_id', '=', 'im.item_ccode_ms')
             ->where('im.item_status', 1)
-            ->where('im.item_is_rentable', 0);
+            ->where('im.item_is_rentable', 0)
+            ->where('im.company_id', $companyId)
+            ->where('sc.company_id', $companyId);
 
         if ($request->filled('category')) {
             $query->where('im.item_cat_ms', $request->category);

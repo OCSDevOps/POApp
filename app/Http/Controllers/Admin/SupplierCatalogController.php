@@ -357,17 +357,21 @@ class SupplierCatalogController extends Controller
     public function performance($supplierId)
     {
         $supplier = Supplier::findOrFail($supplierId);
+        abort_unless($supplier->company_id === session('company_id'), 403);
         
+        $companyId = session('company_id');
         $performance = DB::table('vw_supplier_performance')
             ->where('sup_id', $supplierId)
+            ->where('company_id', $companyId)
             ->first();
 
-        // Get order history
-        $orderHistory = DB::table('porder_master')
+        // Get order history (company-scoped)
+        $orderHistory = DB::table('purchase_order_master')
             ->where('porder_supplier_ms', $supplierId)
-            ->where('porder_status', 1)
-            ->selectRaw('YEAR(porder_createdate) as year, MONTH(porder_createdate) as month, COUNT(*) as order_count, SUM(porder_total_amount) as total_amount')
-            ->groupBy(DB::raw('YEAR(porder_createdate)'), DB::raw('MONTH(porder_createdate)'))
+            ->where('company_id', $companyId)
+            ->where('porder_general_status', '!=', 'cancelled')
+            ->selectRaw('YEAR(porder_date) as year, MONTH(porder_date) as month, COUNT(*) as order_count, SUM(porder_grand_total) as total_amount')
+            ->groupBy(DB::raw('YEAR(porder_date)'), DB::raw('MONTH(porder_date)'))
             ->orderBy('year', 'DESC')
             ->orderBy('month', 'DESC')
             ->limit(12)

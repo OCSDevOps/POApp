@@ -37,14 +37,17 @@ class AdminDashboardController extends Controller
 
         // Supplier-specific data
         if ($user->u_type == 4) {
+            $companyId = session('company_id');
             $userInfo = DB::table('user_info')
                 ->where('username', $user->username)
+                ->where('company_id', $companyId)
                 ->first();
             
             if ($userInfo && $userInfo->procore_supplier_id) {
                 $supplierInfo = DB::table('supplier_master')
                     ->where('procore_supplier_id', $userInfo->procore_supplier_id)
                     ->where('sup_status', 1)
+                    ->where('company_id', $companyId)
                     ->first();
                 
                 if ($supplierInfo) {
@@ -52,16 +55,19 @@ class AdminDashboardController extends Controller
                     
                     $data['total_rfqs'] = DB::table('request_purchase_order')
                         ->where('rporder_supplier_ms', $supplierId)
+                        ->where('company_id', $companyId)
                         ->count();
                     
                     $data['waiting_rfqs'] = DB::table('request_purchase_order')
                         ->where('rporder_supplier_ms', $supplierId)
                         ->where('rporder_status', 'waiting for response')
+                        ->where('company_id', $companyId)
                         ->count();
                     
                     $data['total_items'] = DB::table('supplier_catalog_tab')
                         ->where('supcat_supplier', $supplierId)
                         ->where('supcat_status', 1)
+                        ->where('company_id', $companyId)
                         ->count();
                     
                     $currentDate = date('Y-m-d');
@@ -71,6 +77,7 @@ class AdminDashboardController extends Controller
                         ->where('supcat_supplier', $supplierId)
                         ->where('supcat_lastdate', '<=', $checkDate)
                         ->where('supcat_status', 1)
+                        ->where('company_id', $companyId)
                         ->count();
                 }
             }
@@ -121,9 +128,11 @@ class AdminDashboardController extends Controller
      */
     private function getUserDetails($uid)
     {
+        $companyId = session('company_id');
         return DB::table('user_info')
             ->leftJoin('master_user_type', 'master_user_type.mu_id', '=', 'user_info.u_type')
             ->where('u_id', $uid)
+            ->where('user_info.company_id', $companyId)
             ->select('user_info.*', 'master_user_type.mu_name')
             ->first();
     }
@@ -192,7 +201,9 @@ class AdminDashboardController extends Controller
      */
     private function getTotalReceive()
     {
+        $companyId = session('company_id');
         return DB::table('receive_order_master')
+            ->where('company_id', $companyId)
             ->distinct('rorder_porder_ms')
             ->count('rorder_porder_ms');
     }

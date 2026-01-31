@@ -67,8 +67,15 @@ class UnitOfMeasureController extends Controller
      */
     public function destroy(UnitOfMeasure $uom)
     {
-        $inUse = DB::table('item_master')->where('item_unit_ms', $uom->uom_id)->exists()
-            || DB::table('purchase_order_items')->where('porder_detail_uom', $uom->uom_id)->exists();
+        $companyId = session('company_id');
+        $inUse = DB::table('item_master')
+                ->where('item_unit_ms', $uom->uom_id)
+                ->where('company_id', $companyId)
+                ->exists()
+            || DB::table('purchase_order_items')
+                ->where('porder_item_uom', $uom->uom_id)
+                ->where('company_id', $companyId)
+                ->exists();
 
         if ($inUse) {
             return redirect()->route('admin.uom.index')->with('error', 'Unit is linked to items or purchase orders and cannot be deleted.');

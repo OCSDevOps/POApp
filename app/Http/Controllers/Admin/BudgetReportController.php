@@ -116,41 +116,47 @@ class BudgetReportController extends Controller
      */
     public function drilldown(Request $request, $projectId, $costCodeId)
     {
+        $companyId = Session::get('company_id', 1);
+        
         $costCode = DB::table('cost_code_master')
             ->where('cc_id', $costCodeId)
+            ->where('company_id', $companyId)
             ->first();
         
-        // Get all purchase orders for this cost code
+        // Get all purchase orders for this cost code (company-scoped)
         $purchaseOrders = DB::table('purchase_order_master as pom')
-            ->join('purchase_order_details as pod', 'pom.porder_id', '=', 'pod.pod_porder_id')
+            ->join('purchase_order_details as pod', 'pom.porder_id', '=', 'pod.po_detail_porder_ms')
             ->where('pom.porder_project_ms', $projectId)
-            ->where('pod.pod_cost_code', $costCodeId)
+            ->where('pom.company_id', $companyId)
+            ->where('pod.company_id', $companyId)
+            ->where('pod.po_detail_ccode', $costCodeId)
             ->select(
                 'pom.porder_id',
                 'pom.porder_no',
                 'pom.porder_date',
-                DB::raw('SUM(pod.pod_price * pod.pod_qty) as po_amount'),
-                'pom.porder_status'
+                DB::raw('SUM(pod.po_detail_unitprice * pod.po_detail_quantity) as po_amount'),
+                'pom.porder_general_status as porder_status'
             )
-            ->groupBy('pom.porder_id', 'pom.porder_no', 'pom.porder_date', 'pom.porder_status')
+            ->groupBy('pom.porder_id', 'pom.porder_no', 'pom.porder_date', 'pom.porder_general_status')
             ->orderBy('pom.porder_date', 'desc')
             ->get();
         
-        // Get all receive orders for this cost code
+        // Get all receive orders for this cost code (company-scoped)
         $receiveOrders = DB::table('receive_order_master as rom')
-            ->join('receive_order_items as roi', 'rom.ro_id', '=', 'roi.roi_ro_id')
-            ->join('purchase_order_details as pod', 'roi.roi_po_item_id', '=', 'pod.pod_id')
-            ->where('rom.ro_project_id', $projectId)
-            ->where('pod.pod_cost_code', $costCodeId)
+            ->join('receive_order_details as rod', 'rom.rorder_id', '=', 'rod.ro_detail_rorder_ms')
+            ->where('rom.rorder_project_ms', $projectId)
+            ->where('rom.company_id', $companyId)
+            ->where('rod.company_id', $companyId)
+            ->where('rod.ro_detail_ccode', $costCodeId)
             ->select(
-                'rom.ro_id',
-                'rom.ro_number',
-                'rom.ro_date',
-                DB::raw('SUM(roi.roi_received_qty * roi.roi_unit_price) as ro_amount'),
-                'rom.ro_status'
+                'rom.rorder_id',
+                'rom.rorder_slip_no as ro_number',
+                'rom.rorder_date as ro_date',
+                DB::raw('SUM(rod.ro_detail_quantity * rod.ro_detail_unitprice) as ro_amount'),
+                'rom.rorder_status as ro_status'
             )
-            ->groupBy('rom.ro_id', 'rom.ro_number', 'rom.ro_date', 'rom.ro_status')
-            ->orderBy('rom.ro_date', 'desc')
+            ->groupBy('rom.rorder_id', 'rom.rorder_slip_no', 'rom.rorder_date', 'rom.rorder_status')
+            ->orderBy('rom.rorder_date', 'desc')
             ->get();
         
         return view('admin.reports.budget-drilldown', compact('costCode', 'purchaseOrders', 'receiveOrders'));
@@ -251,6 +257,7 @@ class BudgetReportController extends Controller
      */
     public function export(Request $request)
     {
+        $companyId = Session::get('company_id', 1);
         $projectId = $request->get('project_id');
         $format = $request->get('format', 'csv');
         
@@ -259,9 +266,10 @@ class BudgetReportController extends Controller
                 ->with('error', 'Please select a project to export.');
         }
         
-        // Get project info
+        // Get project info (company-scoped)
         $project = DB::table('project_master')
             ->where('proj_id', $projectId)
+            ->where('proj_company_id', $companyId)
             ->select('proj_name', 'proj_no')
             ->first();
         

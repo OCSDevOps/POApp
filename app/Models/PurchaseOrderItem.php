@@ -10,37 +10,26 @@ class PurchaseOrderItem extends Model
 {
     use HasFactory, CompanyScope;
 
-    protected $table = 'purchase_order_details';
-    protected $primaryKey = 'po_detail_id';
+    protected $table = 'purchase_order_items';
+    protected $primaryKey = 'porder_item_id';
     public $timestamps = false;
 
     protected $fillable = [
-        'po_detail_autogen',
-        'po_detail_porder_ms',
-        'po_detail_item',
-        'po_detail_sku',
-        'po_detail_taxcode',
-        'po_detail_quantity',
-        'backordered_qty',
-        'expected_backorder_date',
-        'backorder_status',
-        'po_detail_unitprice',
-        'po_detail_subtotal',
-        'po_detail_taxamount',
-        'po_detail_total',
-        'po_detail_createdate',
-        'po_detail_status',
-        'po_detail_tax_group',
+        'porder_item_porder_ms',
+        'porder_item_code',
+        'porder_item_name',
+        'porder_item_qty',
+        'porder_item_price',
+        'porder_item_tax',
+        'porder_item_total',
+        'porder_item_ccode',
         'company_id',
     ];
 
     protected $casts = [
-        'po_detail_unitprice' => 'decimal:2',
-        'po_detail_subtotal' => 'decimal:2',
-        'po_detail_taxamount' => 'decimal:2',
-        'po_detail_total' => 'decimal:2',
-        'po_detail_createdate' => 'datetime',
-        'expected_backorder_date' => 'date',
+        'porder_item_price' => 'decimal:2',
+        'porder_item_tax' => 'decimal:2',
+        'porder_item_total' => 'decimal:2',
     ];
 
     /**
@@ -48,7 +37,7 @@ class PurchaseOrderItem extends Model
      */
     public function purchaseOrder()
     {
-        return $this->belongsTo(PurchaseOrder::class, 'po_detail_porder_ms', 'porder_id');
+        return $this->belongsTo(PurchaseOrder::class, 'porder_item_porder_ms', 'porder_id');
     }
 
     /**
@@ -56,46 +45,6 @@ class PurchaseOrderItem extends Model
      */
     public function item()
     {
-        return $this->belongsTo(Item::class, 'po_detail_item', 'item_code');
-    }
-
-    /**
-     * Scope for active items
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('po_detail_status', 1);
-    }
-
-    /**
-     * Get received quantity for this item
-     */
-    public function getReceivedQuantityAttribute()
-    {
-        $po = $this->purchaseOrder;
-        if (!$po) return 0;
-
-        return ReceiveOrderItem::whereHas('receiveOrder', function ($q) use ($po) {
-            $q->where('rorder_porder_ms', $po->porder_id);
-        })
-        ->where('ro_detail_item', $this->po_detail_item)
-        ->where('ro_detail_status', 1)
-        ->sum('ro_detail_quantity');
-    }
-
-    /**
-     * Get back order quantity
-     */
-    public function getBackOrderQuantityAttribute()
-    {
-        return max(0, $this->po_detail_quantity - $this->received_quantity);
-    }
-
-    /**
-     * Check if fully received
-     */
-    public function getIsFullyReceivedAttribute()
-    {
-        return $this->received_quantity >= $this->po_detail_quantity;
+        return $this->belongsTo(Item::class, 'porder_item_code', 'item_code');
     }
 }

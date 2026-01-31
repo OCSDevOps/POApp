@@ -73,15 +73,18 @@ class CommittedActualReportController extends Controller
      */
     private function getTimelineData($projectId, $startDate, $endDate)
     {
+        $companyId = Session::get('company_id', 1);
+        
         // Get monthly committed (PO) data
         $committedData = DB::table('purchase_order_master as pom')
-            ->join('purchase_order_details as pod', 'pom.porder_id', '=', 'pod.pod_porder_id')
+            ->join('purchase_order_details as pod', 'pom.porder_id', '=', 'pod.po_detail_porder_ms')
             ->where('pom.porder_project_ms', $projectId)
-            ->where('pom.porder_status', '>=', 2) // Approved POs only
+            ->where('pom.company_id', $companyId)
+            ->where('pom.porder_general_status', '>=', 'submitted') // Approved POs only
             ->whereBetween('pom.porder_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->select(
                 DB::raw("FORMAT(pom.porder_date, 'yyyy-MM') as month"),
-                DB::raw('SUM(pod.pod_price * pod.pod_qty) as amount')
+                DB::raw('SUM(pod.po_detail_unitprice * pod.po_detail_quantity) as amount')
             )
             ->groupBy(DB::raw("FORMAT(pom.porder_date, 'yyyy-MM')"))
             ->orderBy(DB::raw("FORMAT(pom.porder_date, 'yyyy-MM')"))
@@ -90,16 +93,17 @@ class CommittedActualReportController extends Controller
         
         // Get monthly actual (Receive Order) data
         $actualData = DB::table('receive_order_master as rom')
-            ->join('receive_order_items as roi', 'rom.ro_id', '=', 'roi.roi_ro_id')
-            ->where('rom.ro_project_id', $projectId)
-            ->where('rom.ro_status', '>=', 2) // Completed ROs only
-            ->whereBetween('rom.ro_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->join('receive_order_details as rod', 'rom.rorder_id', '=', 'rod.ro_detail_rorder_ms')
+            ->where('rom.rorder_project_ms', $projectId)
+            ->where('rom.company_id', $companyId)
+            ->where('rom.rorder_status', '>=', 1) // Completed ROs only
+            ->whereBetween('rom.rorder_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->select(
-                DB::raw("FORMAT(rom.ro_date, 'yyyy-MM') as month"),
-                DB::raw('SUM(roi.roi_received_qty * roi.roi_unit_price) as amount')
+                DB::raw("FORMAT(rom.rorder_date, 'yyyy-MM') as month"),
+                DB::raw('SUM(rod.ro_detail_quantity * rod.ro_detail_unitprice) as amount')
             )
-            ->groupBy(DB::raw("FORMAT(rom.ro_date, 'yyyy-MM')"))
-            ->orderBy(DB::raw("FORMAT(rom.ro_date, 'yyyy-MM')"))
+            ->groupBy(DB::raw("FORMAT(rom.rorder_date, 'yyyy-MM')"))
+            ->orderBy(DB::raw("FORMAT(rom.rorder_date, 'yyyy-MM')"))
             ->get()
             ->keyBy('month');
         
@@ -129,52 +133,61 @@ class CommittedActualReportController extends Controller
      */
     private function calculateSummary($projectId, $startDate, $endDate)
     {
-        // Total budget for project
+        $companyId = Session::get('company_id', 1);
+        
+        // Total budget for project (company-scoped)
         $totalBudget = DB::table('budget_master')
             ->where('budget_project_id', $projectId)
+            ->where('company_id', $companyId)
             ->sum('budget_revised_amount');
         
-        // Total committed in period
+        // Total committed in period (company-scoped)
         $totalCommitted = DB::table('purchase_order_master as pom')
-            ->join('purchase_order_details as pod', 'pom.porder_id', '=', 'pod.pod_porder_id')
+            ->join('purchase_order_details as pod', 'pom.porder_id', '=', 'pod.po_detail_porder_ms')
             ->where('pom.porder_project_ms', $projectId)
-            ->where('pom.porder_status', '>=', 2)
+            ->where('pom.company_id', $companyId)
+            ->where('pom.porder_general_status', '>=', 'submitted')
             ->whereBetween('pom.porder_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->sum(DB::raw('pod.pod_price * pod.pod_qty'));
+            ->sum(DB::raw('pod.po_detail_unitprice * pod.po_detail_quantity'));
         
-        // Total actual in period
+        // Total actual in period (company-scoped)
         $totalActual = DB::table('receive_order_master as rom')
-            ->join('receive_order_items as roi', 'rom.ro_id', '=', 'roi.roi_ro_id')
-            ->where('rom.ro_project_id', $projectId)
-            ->where('rom.ro_status', '>=', 2)
-            ->whereBetween('rom.ro_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->sum(DB::raw('roi.roi_received_qty * roi.roi_unit_price'));
+            ->join('receive_order_details as rod', 'rom.rorder_id', '=', 'rod.ro_detail_rorder_ms')
+            ->where('rom.rorder_project_ms', $projectId)
+            ->where('rom.company_id', $companyId)
+            ->where('rom.rorder_status', '>=', 1)
+            ->whereBetween('rom.rorder_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->sum(DB::raw('rod.ro_detail_quantity * rod.ro_detail_unitprice'));
         
-        // Cumulative totals (all time)
+        // Cumulative totals (all time, company-scoped)
         $cumulativeCommitted = DB::table('purchase_order_master as pom')
-            ->join('purchase_order_details as pod', 'pom.porder_id', '=', 'pod.pod_porder_id')
+            ->join('purchase_order_details as pod', 'pom.porder_id', '=', 'pod.po_detail_porder_ms')
             ->where('pom.porder_project_ms', $projectId)
-            ->where('pom.porder_status', '>=', 2)
-            ->sum(DB::raw('pod.pod_price * pod.pod_qty'));
+            ->where('pom.company_id', $companyId)
+            ->where('pom.porder_general_status', '>=', 'submitted')
+            ->sum(DB::raw('pod.po_detail_unitprice * pod.po_detail_quantity'));
         
         $cumulativeActual = DB::table('receive_order_master as rom')
-            ->join('receive_order_items as roi', 'rom.ro_id', '=', 'roi.roi_ro_id')
-            ->where('rom.ro_project_id', $projectId)
-            ->where('rom.ro_status', '>=', 2)
-            ->sum(DB::raw('roi.roi_received_qty * roi.roi_unit_price'));
+            ->join('receive_order_details as rod', 'rom.rorder_id', '=', 'rod.ro_detail_rorder_ms')
+            ->where('rom.rorder_project_ms', $projectId)
+            ->where('rom.company_id', $companyId)
+            ->where('rom.rorder_status', '>=', 1)
+            ->sum(DB::raw('rod.ro_detail_quantity * rod.ro_detail_unitprice'));
         
-        // PO Count
+        // PO Count (company-scoped)
         $poCount = DB::table('purchase_order_master')
             ->where('porder_project_ms', $projectId)
-            ->where('porder_status', '>=', 2)
+            ->where('company_id', $companyId)
+            ->where('porder_general_status', '>=', 'submitted')
             ->whereBetween('porder_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->count();
         
-        // RO Count
+        // RO Count (company-scoped)
         $roCount = DB::table('receive_order_master')
-            ->where('ro_project_id', $projectId)
-            ->where('ro_status', '>=', 2)
-            ->whereBetween('ro_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('rorder_project_ms', $projectId)
+            ->where('company_id', $companyId)
+            ->where('rorder_status', '>=', 1)
+            ->whereBetween('rorder_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->count();
         
         return [
@@ -196,23 +209,13 @@ class CommittedActualReportController extends Controller
      */
     private function getCostCodeBreakdown($projectId, $startDate, $endDate)
     {
+        $companyId = Session::get('company_id', 1);
+        
         return DB::table('budget_master as b')
             ->join('cost_code_master as cc', 'b.budget_cost_code_id', '=', 'cc.cc_id')
-            ->leftJoin('purchase_order_details as pod', function($join) use ($projectId, $startDate, $endDate) {
-                $join->on('b.budget_cost_code_id', '=', 'pod.pod_cost_code')
-                    ->join('purchase_order_master as pom', 'pod.pod_porder_id', '=', 'pom.porder_id')
-                    ->where('pom.porder_project_ms', $projectId)
-                    ->where('pom.porder_status', '>=', 2)
-                    ->whereBetween('pom.porder_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
-            })
-            ->leftJoin('receive_order_items as roi', function($join) use ($projectId, $startDate, $endDate) {
-                $join->on('b.budget_cost_code_id', '=', 'roi.roi_po_item_id')
-                    ->join('receive_order_master as rom', 'roi.roi_ro_id', '=', 'rom.ro_id')
-                    ->where('rom.ro_project_id', $projectId)
-                    ->where('rom.ro_status', '>=', 2)
-                    ->whereBetween('rom.ro_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
-            })
             ->where('b.budget_project_id', $projectId)
+            ->where('b.company_id', $companyId)
+            ->where('cc.company_id', $companyId)
             ->select(
                 'cc.cc_no',
                 'cc.cc_name',
@@ -254,9 +257,11 @@ class CommittedActualReportController extends Controller
                 $startDate = now()->subMonths(6);
         }
         
-        // Get project info
+        // Get project info (company-scoped)
+        $companyId = Session::get('company_id', 1);
         $project = DB::table('project_master')
             ->where('proj_id', $projectId)
+            ->where('proj_company_id', $companyId)
             ->select('proj_name', 'proj_no')
             ->first();
         

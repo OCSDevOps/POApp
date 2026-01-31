@@ -54,8 +54,15 @@ class TaxGroupController extends Controller
 
     public function destroy(TaxGroup $taxgroup)
     {
-        $inUse = DB::table('purchase_order_details')->where('po_detail_tax_group', $taxgroup->id)->exists()
-            || DB::table('request_purchase_order_details')->where('rfq_detail_tax_group', $taxgroup->id)->exists();
+        $companyId = session('company_id');
+        $inUse = DB::table('purchase_order_details')
+                ->where('po_detail_tax_group', $taxgroup->id)
+                ->where('company_id', $companyId)
+                ->exists()
+            || DB::table('request_purchase_order_details')
+                ->where('rfq_detail_tax_group', $taxgroup->id)
+                ->where('company_id', $companyId)
+                ->exists();
 
         if ($inUse) {
             return redirect()->route('admin.taxgroups.index')->with('error', 'Tax group is in use and cannot be deleted.');

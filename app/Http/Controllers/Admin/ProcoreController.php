@@ -31,9 +31,11 @@ class ProcoreController extends Controller
             ->limit(20)
             ->get();
 
-        // Get project mappings
+        // Get project mappings (scoped by company via project_master)
+        $companyId = session('company_id');
         $projectMappings = DB::table('procore_project_mapping')
             ->join('project_master', 'procore_project_mapping.local_project_id', '=', 'project_master.proj_id')
+            ->where('project_master.proj_company_id', $companyId)
             ->select('procore_project_mapping.*', 'project_master.proj_name')
             ->orderBy('last_synced_at', 'DESC')
             ->get();
@@ -170,8 +172,13 @@ class ProcoreController extends Controller
      */
     public function projectMappings()
     {
+        $companyId = session('company_id');
         $mappings = DB::table('procore_project_mapping')
             ->leftJoin('project_master', 'procore_project_mapping.local_project_id', '=', 'project_master.proj_id')
+            ->where(function($q) use ($companyId) {
+                $q->whereNull('project_master.proj_id')
+                  ->orWhere('project_master.proj_company_id', $companyId);
+            })
             ->select('procore_project_mapping.*', 'project_master.proj_name')
             ->orderBy('procore_project_name')
             ->get();
@@ -209,9 +216,14 @@ class ProcoreController extends Controller
      */
     public function costCodeMappings(Request $request)
     {
+        $companyId = session('company_id');
         $query = DB::table('procore_cost_code_mapping')
-            ->leftJoin('costcode_master', 'procore_cost_code_mapping.local_cost_code_id', '=', 'costcode_master.ccode_id')
-            ->select('procore_cost_code_mapping.*', 'costcode_master.ccode_code', 'costcode_master.ccode_name');
+            ->leftJoin('cost_code_master', 'procore_cost_code_mapping.local_cost_code_id', '=', 'cost_code_master.cc_id')
+            ->where(function($q) use ($companyId) {
+                $q->whereNull('cost_code_master.cc_id')
+                  ->orWhere('cost_code_master.company_id', $companyId);
+            })
+            ->select('procore_cost_code_mapping.*', 'cost_code_master.cc_no', 'cost_code_master.cc_name');
 
         if ($request->filled('project_id')) {
             $query->where('procore_project_id', $request->project_id);
@@ -220,6 +232,8 @@ class ProcoreController extends Controller
         $mappings = $query->orderBy('procore_cost_code')->paginate(50);
 
         $projects = DB::table('procore_project_mapping')
+            ->join('project_master', 'procore_project_mapping.local_project_id', '=', 'project_master.proj_id')
+            ->where('project_master.proj_company_id', $companyId)
             ->select('procore_project_id', 'procore_project_name')
             ->orderBy('procore_project_name')
             ->get();

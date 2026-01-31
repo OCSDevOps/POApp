@@ -47,8 +47,10 @@ class ReceiveOrderController extends Controller
 
         $receiveOrders = $query->orderBy('rorder_createdate', 'DESC')->paginate(15);
 
-        // Get receiving summary
+        // Get receiving summary (filtered by company)
+        $companyId = session('company_id');
         $summary = DB::table('vw_receiving_summary')
+            ->where('company_id', $companyId)
             ->when($request->filled('po_id'), function ($q) use ($request) {
                 return $q->where('porder_id', $request->po_id);
             })
@@ -259,7 +261,9 @@ class ReceiveOrderController extends Controller
      */
     public function backOrderReport(Request $request)
     {
-        $query = DB::table('vw_back_order_report');
+        $companyId = session('company_id');
+        $query = DB::table('vw_back_order_report')
+            ->where('company_id', $companyId);
 
         if ($request->filled('project_id')) {
             $query->where('porder_project_ms', $request->project_id);
@@ -282,7 +286,9 @@ class ReceiveOrderController extends Controller
      */
     public function receivingSummary(Request $request)
     {
-        $query = DB::table('vw_receiving_summary');
+        $companyId = session('company_id');
+        $query = DB::table('vw_receiving_summary')
+            ->where('company_id', $companyId);
 
         if ($request->filled('project_id')) {
             $query->where('proj_id', $request->project_id);
