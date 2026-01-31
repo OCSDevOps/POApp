@@ -318,6 +318,18 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::post('/smtp', [CompanyController::class, 'updateSmtp'])->name('smtp');
     });
 
+    // Phase 3: Multi-Tenancy Management (Super Admin)
+    Route::prefix('tenants')->name('tenants.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\TenantManagementController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\TenantManagementController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\TenantManagementController::class, 'store'])->name('store');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\TenantManagementController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [\App\Http\Controllers\Admin\TenantManagementController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [\App\Http\Controllers\Admin\TenantManagementController::class, 'update'])->name('update');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\TenantManagementController::class, 'destroy'])->name('destroy');
+        Route::get('/switch/{id}', [\App\Http\Controllers\Admin\TenantManagementController::class, 'switch'])->name('switch');
+    });
+
     // Item Packages
     Route::prefix('packages')->name('packages.')->group(function () {
         Route::get('/', [ItemPackageController::class, 'index'])->name('index');

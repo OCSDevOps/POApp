@@ -25,7 +25,10 @@ class AuthController extends Controller
         $credentials = $req->only('email','password');
 
         if(Auth::attempt($credentials)){
-            session(['name' => Auth::user()->name]);
+            $user = Auth::user();
+            session(['name' => $user->name]);
+            session(['company_id' => $user->company_id]);
+            session(['company_name' => $user->company->name ?? 'Default Company']);
             return redirect('dashboard');
         }
 
