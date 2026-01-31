@@ -37,12 +37,11 @@ class Supplier extends Model
 
     /**
      * Boot method to apply global scope.
-     * Temporarily disabled during initial migration.
      */
-    // protected static function booted()
-    // {
-    //     static::addGlobalScope(new CompanyScope);
-    // }
+    protected static function booted()
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
 
     /**
      * Get the company that owns the supplier.

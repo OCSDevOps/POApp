@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -42,7 +43,16 @@ class Equipment extends Model
         'eqm_rental_insurance',
         'eqm_rental_insurance_amt',
         'eqm_created_date',
+        'company_id',
     ];
+
+    /**
+     * Boot the model and apply global scope.
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
 
     public function scopeActive($query)
     {

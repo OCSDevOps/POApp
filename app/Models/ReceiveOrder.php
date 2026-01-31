@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -23,7 +24,16 @@ class ReceiveOrder extends Model
         'rorder_created_at',
         'rorder_modified_by',
         'rorder_modified_at',
+        'company_id',
     ];
+
+    /**
+     * Boot method to apply global scope.
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
 
     /**
      * Get the purchase order associated with the receive order.

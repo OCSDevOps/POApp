@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -30,6 +31,7 @@ class PurchaseOrderItem extends Model
         'po_detail_createdate',
         'po_detail_status',
         'po_detail_tax_group',
+        'company_id',
     ];
 
     protected $casts = [
@@ -40,6 +42,14 @@ class PurchaseOrderItem extends Model
         'po_detail_createdate' => 'datetime',
         'expected_backorder_date' => 'date',
     ];
+
+    /**
+     * Boot the model and apply global scope.
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
 
     /**
      * Get the purchase order for this item.

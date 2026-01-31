@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -28,7 +29,16 @@ class Budget extends Model
         'budget_modified_by',
         'budget_modified_at',
         'procore_budget_id',
+        'company_id',
     ];
+
+    /**
+     * Boot method to apply global scope.
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
 
     protected $casts = [
         'budget_original_amount' => 'decimal:2',

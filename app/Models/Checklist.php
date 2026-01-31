@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Checklist extends Model
@@ -24,7 +25,16 @@ class Checklist extends Model
         'status',
         'created_date',
         'modified_date',
+        'company_id',
     ];
+
+    /**
+     * Boot the model and apply global scope.
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
 
     public function items()
     {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -27,7 +28,16 @@ class CostCode extends Model
         'cc_created_at',
         'cc_modifyby',
         'cc_modifydate',
+        'company_id',
     ];
+
+    /**
+     * Boot method to apply global scope.
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
 
     protected $casts = [
         'cc_status' => 'integer',
