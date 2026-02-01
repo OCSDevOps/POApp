@@ -67,6 +67,18 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
     Route::get('dashboard/chart-data', [AdminDashboardController::class, 'getPODataForChart'])->name('dashboard.chartdata');
     Route::get('logout', [AdminDashboardController::class, 'logout'])->name('logout');
     
+    // Company Management (Super Admin Only)
+    Route::prefix('companies')->name('companies.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CompaniesController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\CompaniesController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\CompaniesController::class, 'store'])->name('store');
+        Route::get('/{company}', [\App\Http\Controllers\Admin\CompaniesController::class, 'show'])->name('show');
+        Route::get('/{company}/edit', [\App\Http\Controllers\Admin\CompaniesController::class, 'edit'])->name('edit');
+        Route::put('/{company}', [\App\Http\Controllers\Admin\CompaniesController::class, 'update'])->name('update');
+        Route::delete('/{company}', [\App\Http\Controllers\Admin\CompaniesController::class, 'destroy'])->name('destroy');
+        Route::post('/{company}/switch', [\App\Http\Controllers\Admin\CompaniesController::class, 'switch'])->name('switch');
+    });
+    
     // Purchase Orders
     Route::prefix('porder')->name('porder.')->group(function () {
         Route::get('/', [PurchaseOrderController::class, 'index'])->name('index');
