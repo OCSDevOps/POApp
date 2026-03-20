@@ -330,7 +330,9 @@
     
     function initCharts(data) {
         // PO Status Chart
-        const poCtx = document.getElementById('poStatusChart').getContext('2d');
+        const poEl = document.getElementById('poStatusChart');
+        if (!poEl) return;
+        const poCtx = poEl.getContext('2d');
         
         if (poStatusChart) {
             poStatusChart.destroy();
@@ -363,7 +365,9 @@
         });
         
         // Delivery Status Chart
-        const deliveryCtx = document.getElementById('deliveryStatusChart').getContext('2d');
+        const deliveryEl = document.getElementById('deliveryStatusChart');
+        if (!deliveryEl) return;
+        const deliveryCtx = deliveryEl.getContext('2d');
         
         if (deliveryStatusChart) {
             deliveryStatusChart.destroy();
@@ -427,6 +431,10 @@
                 },
                 error: function(xhr) {
                     console.error('Error fetching chart data:', xhr);
+                    var alertHtml = '<div class="alert alert-warning alert-dismissible fade show" role="alert">' +
+                        '<i class="fas fa-exclamation-circle me-2"></i>Failed to load dashboard data. Please try again.' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+                    $('.content-wrapper').prepend(alertHtml);
                 }
             });
         });

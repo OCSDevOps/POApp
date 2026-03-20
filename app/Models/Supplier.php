@@ -16,21 +16,17 @@ class Supplier extends Model
 
     protected $fillable = [
         'sup_name',
-        'sup_code',
         'sup_email',
         'sup_phone',
-        'sup_mobile',
         'sup_address',
-        'sup_city',
-        'sup_state',
-        'sup_zip',
-        'sup_country',
         'sup_contact_person',
+        'sup_details',
+        'sup_type',
         'sup_status',
-        'sup_created_by',
-        'sup_created_at',
-        'sup_modified_by',
-        'sup_modified_at',
+        'sup_createby',
+        'sup_createdate',
+        'sup_modifyby',
+        'sup_modifydate',
         'procore_supplier_id',
         'company_id',
     ];
@@ -73,5 +69,35 @@ class Supplier extends Model
     public function scopeOrderByName($query)
     {
         return $query->orderBy('sup_name', 'ASC');
+    }
+
+    public function scopeSubcontractors($query)
+    {
+        return $query->whereIn('sup_type', [2, 3]);
+    }
+
+    public function scopeSupplierOnly($query)
+    {
+        return $query->where('sup_type', 1);
+    }
+
+    public function getTypeTextAttribute()
+    {
+        return match ((int) ($this->sup_type ?? 1)) {
+            1 => 'Supplier',
+            2 => 'Subcontractor',
+            3 => 'Both',
+            default => 'Supplier',
+        };
+    }
+
+    public function contracts()
+    {
+        return $this->hasMany(Contract::class, 'contract_supplier_id', 'sup_id');
+    }
+
+    public function complianceItems()
+    {
+        return $this->hasMany(SupplierCompliance::class, 'compliance_supplier_id', 'sup_id');
     }
 }

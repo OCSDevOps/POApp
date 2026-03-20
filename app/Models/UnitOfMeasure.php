@@ -19,7 +19,6 @@ class UnitOfMeasure extends Model
         'uom_createdate',
         'uom_createby',
         'uom_modifydate',
-        'uom_modifyby',
         'uom_status',
     ];
 

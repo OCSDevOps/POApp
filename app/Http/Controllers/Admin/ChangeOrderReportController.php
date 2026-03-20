@@ -27,9 +27,9 @@ class ChangeOrderReportController extends Controller
         
         // Get projects for filter dropdown
         $projects = DB::table('project_master')
-            ->where('proj_company_id', $companyId)
+            ->where('company_id', $companyId)
             ->where('proj_status', 1)
-            ->select('proj_id', 'proj_name', 'proj_no')
+            ->select('proj_id', 'proj_name', 'proj_number')
             ->orderBy('proj_name')
             ->get();
         
@@ -78,9 +78,9 @@ class ChangeOrderReportController extends Controller
                 'bco.bco_id as id',
                 'bco.bco_number as number',
                 'p.proj_name as project_name',
-                'p.proj_no as project_number',
+                'p.proj_number as project_number',
                 'cc.cc_no as cost_code',
-                'cc.cc_name as cost_code_name',
+                'cc.cc_description as cost_code_name',
                 'bco.bco_type as type',
                 'bco.bco_amount as amount',
                 'bco.previous_budget',
@@ -123,7 +123,7 @@ class ChangeOrderReportController extends Controller
                 'poco.poco_id as id',
                 'poco.poco_number as number',
                 'p.proj_name as project_name',
-                'p.proj_no as project_number',
+                'p.proj_number as project_number',
                 DB::raw('NULL as cost_code'),
                 DB::raw('NULL as cost_code_name'),
                 'poco.poco_type as type',

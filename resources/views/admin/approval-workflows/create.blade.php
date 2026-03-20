@@ -15,6 +15,7 @@
         </div>
     </div>
 
+    @include('partials.validation-errors')
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
@@ -40,6 +41,7 @@
                                     <option value="budget_change_order">Budget Change Order (BCO)</option>
                                     <option value="po_change_order">PO Change Order (PCO)</option>
                                     <option value="purchase_order">Purchase Order (PO)</option>
+                                    <option value="contract_co">Contract Change Order (CCO)</option>
                                 </select>
                                 <small class="text-muted">Choose what type of transaction this workflow applies to</small>
                             </div>
@@ -149,7 +151,7 @@
                                 <select name="approver_user_1" id="approver_user_1" class="form-select">
                                     <option value="">Select user...</option>
                                     @foreach($users as $user)
-                                        <option value="{{ $user->u_id }}">{{ $user->u_name }} ({{ $user->u_email }})</option>
+                                        <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -159,7 +161,7 @@
                                 <select name="approver_user_2" id="approver_user_2" class="form-select">
                                     <option value="">None (Single-level approval)</option>
                                     @foreach($users as $user)
-                                        <option value="{{ $user->u_id }}">{{ $user->u_name }} ({{ $user->u_email }})</option>
+                                        <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -169,7 +171,7 @@
                                 <select name="approver_user_3" id="approver_user_3" class="form-select">
                                     <option value="">None (Two-level approval)</option>
                                     @foreach($users as $user)
-                                        <option value="{{ $user->u_id }}">{{ $user->u_name }} ({{ $user->u_email }})</option>
+                                        <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -242,7 +244,7 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
 $(document).ready(function() {
     // Toggle between role-based and user-based
@@ -290,4 +292,4 @@ $(document).ready(function() {
     });
 });
 </script>
-@endsection
+@endpush

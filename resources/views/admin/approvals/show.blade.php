@@ -1,4 +1,4 @@
-@extends('layout.master')
+@extends('layouts.admin')
 
 @section('title', 'Approval Request - ' . ($approvalRequest->apreq_type == 'BudgetChangeOrder' ? 'BCO' : 'PCO'))
 
@@ -200,7 +200,7 @@
                                 </tr>
                                 <tr>
                                     <th>Requested By:</th>
-                                    <td>{{ $approvalRequest->requester->u_name ?? 'N/A' }}</td>
+                                    <td>{{ $approvalRequest->requester->name ?? 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Requested Date:</th>
@@ -208,7 +208,7 @@
                                 </tr>
                                 <tr>
                                     <th>Current Approver:</th>
-                                    <td>{{ $approvalRequest->approver->u_name ?? 'Pending Assignment' }}</td>
+                                    <td>{{ $approvalRequest->approver->name ?? 'Pending Assignment' }}</td>
                                 </tr>
                                 @if($approvalRequest->apreq_status != 'pending')
                                     <tr>
@@ -306,7 +306,7 @@
                                             <div class="timeline-content">
                                                 <div class="d-flex justify-content-between align-items-start">
                                                     <div>
-                                                        <strong>{{ $history->user->u_name }}</strong>
+                                                        <strong>{{ $history->user->name }}</strong>
                                                         <span class="badge bg-{{ 
                                                             $history->apah_action == 'approved' ? 'success' : 
                                                             ($history->apah_action == 'rejected' ? 'danger' : 

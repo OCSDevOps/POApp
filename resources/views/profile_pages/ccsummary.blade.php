@@ -1,4 +1,4 @@
-@extends('layouts/dashboard')
+@extends('layouts.dashboard')
 
 @section('css')
 
@@ -43,7 +43,7 @@
 
                         <form id="report-filter-form" action="{{ route('ccsummary') }}" method="post">
                             @csrf
-                            <select id="report-filter-select" name="report_filter_select[]" class="select2 form-control select2-multiple" data-toggle="select2" multiple="multiple" data-placeholder="Choose Jobs...">
+                            <select id="report-filter-select" name="report_filter_select[]" class="select2 form-control select2-multiple" data-bs-toggle="select2" multiple="multiple" data-placeholder="Choose Jobs...">
                                 @foreach ($jobs as $job)
                                     <option value="{{$job->Job}}"
                                         @if (!empty($reqJobs) && in_array($job->Job,$reqJobs))

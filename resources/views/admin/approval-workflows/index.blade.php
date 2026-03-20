@@ -43,6 +43,7 @@
                         <option value="budget_change_order" {{ request('type') == 'budget_change_order' ? 'selected' : '' }}>Budget Change Orders</option>
                         <option value="po_change_order" {{ request('type') == 'po_change_order' ? 'selected' : '' }}>PO Change Orders</option>
                         <option value="purchase_order" {{ request('type') == 'purchase_order' ? 'selected' : '' }}>Purchase Orders</option>
+                        <option value="contract_co" {{ request('type') == 'contract_co' ? 'selected' : '' }}>Contract Change Orders</option>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -96,16 +97,18 @@
                             @foreach($workflows as $workflow)
                                 <tr>
                                     <td>
-                                        @if($workflow->aw_type == 'budget_change_order')
+                                        @if($workflow->workflow_type == 'budget_change_order')
                                             <span class="badge bg-info">BCO</span>
-                                        @elseif($workflow->aw_type == 'po_change_order')
+                                        @elseif($workflow->workflow_type == 'po_change_order')
                                             <span class="badge bg-warning">PCO</span>
+                                        @elseif($workflow->workflow_type == 'contract_co')
+                                            <span class="badge bg-success">CCO</span>
                                         @else
                                             <span class="badge bg-primary">PO</span>
                                         @endif
                                     </td>
                                     <td>
-                                        @if($workflow->aw_project_id)
+                                        @if($workflow->project_id)
                                             <strong>{{ $workflow->project->proj_name ?? 'N/A' }}</strong><br>
                                             <small class="text-muted">Project-Specific</small>
                                         @else
@@ -113,45 +116,44 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <strong>${{ number_format($workflow->aw_threshold_from, 2) }}</strong>
-                                        @if($workflow->aw_threshold_to)
-                                            to <strong>${{ number_format($workflow->aw_threshold_to, 2) }}</strong>
+                                        <strong>${{ number_format($workflow->amount_threshold_min, 2) }}</strong>
+                                        @if($workflow->amount_threshold_max)
+                                            to <strong>${{ number_format($workflow->amount_threshold_max, 2) }}</strong>
                                         @else
                                             <span class="text-muted">and above</span>
                                         @endif
                                     </td>
                                     <td>
-                                        @if($workflow->aw_approver_roles)
+                                        @if($workflow->approver_roles)
                                             <span class="badge bg-success">Role-Based</span>
                                         @else
                                             <span class="badge bg-secondary">User-Based</span>
                                         @endif
                                     </td>
                                     <td>
-                                        @if($workflow->aw_approver_roles)
+                                        @if($workflow->approver_roles)
                                             @php
-                                                $roles = json_decode($workflow->aw_approver_roles, true);
+                                                $roles = is_array($workflow->approver_roles) ? $workflow->approver_roles : json_decode($workflow->approver_roles, true);
                                             @endphp
-                                            @foreach($roles as $role)
-                                                <span class="badge bg-light text-dark">{{ ucwords(str_replace('_', ' ', $role)) }}</span>
-                                            @endforeach
+                                            @if(is_array($roles))
+                                                @foreach($roles as $role)
+                                                    <span class="badge bg-light text-dark">{{ ucwords(str_replace('_', ' ', $role)) }}</span>
+                                                @endforeach
+                                            @endif
                                         @else
                                             @php
-                                                $approvers = collect([
-                                                    $workflow->approverUser1,
-                                                    $workflow->approverUser2,
-                                                    $workflow->approverUser3,
-                                                ])->filter();
+                                                $approverIds = is_array($workflow->approver_user_ids) ? $workflow->approver_user_ids : json_decode($workflow->approver_user_ids, true);
+                                                $approvers = $approverIds ? \App\Models\User::whereIn('id', $approverIds)->get() : collect();
                                             @endphp
                                             <small>
                                                 @foreach($approvers as $index => $approver)
-                                                    {{ $approver->u_name }}@if(!$loop->last), @endif
+                                                    {{ $approver->name }}@if(!$loop->last), @endif
                                                 @endforeach
                                             </small>
                                         @endif
                                     </td>
                                     <td>
-                                        @if($workflow->aw_status)
+                                        @if($workflow->is_active)
                                             <span class="badge bg-success">Active</span>
                                         @else
                                             <span class="badge bg-danger">Inactive</span>
@@ -159,27 +161,22 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('admin.approval-workflows.edit', $workflow->aw_id) }}" 
+                                            <a href="{{ route('admin.approval-workflows.edit', $workflow->workflow_id) }}"
                                                class="btn btn-outline-primary" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form action="{{ route('admin.approval-workflows.toggle-status', $workflow->aw_id) }}" 
+                                            <form action="{{ route('admin.approval-workflows.toggle-status', $workflow->workflow_id) }}"
                                                   method="POST" class="d-inline">
                                                 @csrf
-                                                <button type="submit" class="btn btn-outline-{{ $workflow->aw_status ? 'warning' : 'success' }}" 
-                                                        title="{{ $workflow->aw_status ? 'Deactivate' : 'Activate' }}">
-                                                    <i class="fas fa-{{ $workflow->aw_status ? 'pause' : 'play' }}"></i>
+                                                <button type="submit" class="btn btn-outline-{{ $workflow->is_active ? 'warning' : 'success' }}"
+                                                        title="{{ $workflow->is_active ? 'Deactivate' : 'Activate' }}">
+                                                    <i class="fas fa-{{ $workflow->is_active ? 'pause' : 'play' }}"></i>
                                                 </button>
                                             </form>
-                                            <form action="{{ route('admin.approval-workflows.destroy', $workflow->aw_id) }}" 
-                                                  method="POST" class="d-inline" 
-                                                  onsubmit="return confirm('Delete this workflow? This action cannot be undone.')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-outline-danger" title="Delete">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
+                                            <button type="button" class="btn btn-outline-danger delete-btn" title="Delete"
+                                                    data-url="{{ route('admin.approval-workflows.destroy', $workflow->workflow_id) }}" data-name="workflow #{{ $workflow->workflow_id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -208,4 +205,5 @@
         </div>
     </div>
 </div>
+@include('partials.delete-modal')
 @endsection

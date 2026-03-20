@@ -17,18 +17,14 @@
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
-            <button type="button" class="close" data-dismiss="alert">
-                <span>&times;</span>
-            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
-            <button type="button" class="close" data-dismiss="alert">
-                <span>&times;</span>
-            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
@@ -62,15 +58,15 @@
                                         {{ $company->name }}
                                     </a>
                                     @if(session('company_id') == $company->id)
-                                        <span class="badge badge-success ml-1">Current</span>
+                                        <span class="badge bg-success ms-1">Current</span>
                                     @endif
                                 </td>
                                 <td>{{ $company->subdomain ?? '-' }}</td>
                                 <td>
                                     @if($company->status == 1)
-                                        <span class="badge badge-success">Active</span>
+                                        <span class="badge bg-success">Active</span>
                                     @else
-                                        <span class="badge badge-secondary">Inactive</span>
+                                        <span class="badge bg-secondary">Inactive</span>
                                     @endif
                                 </td>
                                 <td>{{ $company->users_count }}</td>

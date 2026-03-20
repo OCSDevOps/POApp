@@ -20,14 +20,12 @@ class Item extends Model
         'item_description',
         'item_cat_ms',
         'item_ccode_ms',
-        'item_uom_ms',
-        'item_price',
-        'item_is_rentable',
+        'item_unit_ms',
         'item_status',
-        'item_created_by',
-        'item_created_at',
-        'item_modified_by',
-        'item_modified_at',
+        'item_createby',
+        'item_createdate',
+        'item_modifyby',
+        'item_modifydate',
         'company_id',
     ];
 
@@ -60,7 +58,7 @@ class Item extends Model
      */
     public function unitOfMeasure()
     {
-        return $this->belongsTo(UnitOfMeasure::class, 'item_uom_ms', 'uom_id');
+        return $this->belongsTo(UnitOfMeasure::class, 'item_unit_ms', 'uom_id');
     }
 
     /**
@@ -69,22 +67,6 @@ class Item extends Model
     public function scopeActive($query)
     {
         return $query->where('item_status', 1);
-    }
-
-    /**
-     * Scope for non-rentable items
-     */
-    public function scopeNonRentable($query)
-    {
-        return $query->where('item_is_rentable', 0);
-    }
-
-    /**
-     * Scope for rentable items
-     */
-    public function scopeRentable($query)
-    {
-        return $query->where('item_is_rentable', 1);
     }
 
     /**

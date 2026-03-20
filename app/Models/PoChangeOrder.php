@@ -7,7 +7,7 @@ use App\Traits\CompanyScope;
 
 class PoChangeOrder extends Model
 {
-    use CompanyScope;
+    use CompanyScope, \App\Traits\HasAttachments;
     protected $table = 'po_change_orders';
     protected $primaryKey = 'poco_id';
     

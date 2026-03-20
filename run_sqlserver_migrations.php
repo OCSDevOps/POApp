@@ -127,8 +127,8 @@ echo "\nChecking enhanced columns...\n";
 echo "----------------------------\n";
 
 $columnChecks = [
-    ['purchase_order_items', 'backorder_qty', 'Phase 1.5'],
-    ['purchase_order_items', 'backorder_status', 'Phase 1.5'],
+    ['purchase_order_details', 'backorder_qty', 'Phase 1.5'],
+    ['purchase_order_details', 'backorder_status', 'Phase 1.5'],
     ['budget_master', 'original_amount', 'Phase 2.2'],
     ['budget_master', 'committed', 'Phase 2.2'],
     ['budget_master', 'actual', 'Phase 2.2'],

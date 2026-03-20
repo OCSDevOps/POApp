@@ -67,7 +67,7 @@
                                                 @foreach($topVariances as $variance)
                                                 <tr>
                                                     <td>{{ $variance->cc_no }}</td>
-                                                    <td>{{ $variance->cc_name }}</td>
+                                                    <td>{{ $variance->cc_description }}</td>
                                                     <td class="text-right">${{ number_format($variance->budget_revised_amount, 2) }}</td>
                                                     <td class="text-right">${{ number_format($variance->committed + $variance->actual, 2) }}</td>
                                                     <td class="text-right {{ $variance->variance < 0 ? 'text-danger' : 'text-success' }}">
@@ -75,11 +75,11 @@
                                                     </td>
                                                     <td class="text-center">
                                                         @if($variance->variance_status == 'over')
-                                                            <span class="badge badge-danger">Over Budget</span>
+                                                            <span class="badge bg-danger">Over Budget</span>
                                                         @elseif($variance->variance_status == 'exact')
-                                                            <span class="badge badge-warning">Exact</span>
+                                                            <span class="badge bg-warning">Exact</span>
                                                         @else
-                                                            <span class="badge badge-success">Under Budget</span>
+                                                            <span class="badge bg-success">Under Budget</span>
                                                         @endif
                                                     </td>
                                                 </tr>
@@ -114,18 +114,18 @@
                                                 @foreach($alertsData as $alert)
                                                 <tr class="{{ $alert->utilization >= 90 ? 'table-danger' : 'table-warning' }}">
                                                     <td>{{ $alert->cc_no }}</td>
-                                                    <td>{{ $alert->cc_name }}</td>
+                                                    <td>{{ $alert->cc_description }}</td>
                                                     <td class="text-right">{{ number_format($alert->utilization, 1) }}%</td>
                                                     <td class="text-right">
                                                         {{ $alert->variance >= 0 ? '$' : '($' }}{{ number_format(abs($alert->variance), 2) }}{{ $alert->variance < 0 ? ')' : '' }}
                                                     </td>
                                                     <td>
                                                         @if($alert->critical_notification_sent)
-                                                            <span class="badge badge-danger"><i class="fas fa-times-circle"></i> Critical (≥90%)</span>
+                                                            <span class="badge bg-danger"><i class="fas fa-times-circle"></i> Critical (≥90%)</span>
                                                         @elseif($alert->warning_notification_sent)
-                                                            <span class="badge badge-warning"><i class="fas fa-exclamation-triangle"></i> Warning (≥75%)</span>
+                                                            <span class="badge bg-warning"><i class="fas fa-exclamation-triangle"></i> Warning (≥75%)</span>
                                                         @elseif($alert->variance < 0)
-                                                            <span class="badge badge-danger"><i class="fas fa-ban"></i> Over Budget</span>
+                                                            <span class="badge bg-danger"><i class="fas fa-ban"></i> Over Budget</span>
                                                         @endif
                                                     </td>
                                                 </tr>
@@ -205,4 +205,3 @@ var chart = new Chart(ctx, {
 @endif
 </script>
 @endpush
-@endsection

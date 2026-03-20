@@ -17,28 +17,26 @@ class AccountingIntegration extends Model
     protected $fillable = [
         'company_id',
         'integration_type',
-        'integration_name',
-        'status',
         'client_id',
         'client_secret',
         'access_token',
         'refresh_token',
         'token_expires_at',
         'settings',
-        'auto_sync_po',
-        'auto_sync_invoices',
+        'is_active',
+        'auto_sync_purchase_orders',
         'auto_sync_vendors',
         'auto_sync_items',
-        'created_by',
+        'last_sync_at',
     ];
 
     protected $casts = [
-        'status' => 'integer',
-        'auto_sync_po' => 'boolean',
-        'auto_sync_invoices' => 'boolean',
+        'is_active' => 'boolean',
+        'auto_sync_purchase_orders' => 'boolean',
         'auto_sync_vendors' => 'boolean',
         'auto_sync_items' => 'boolean',
         'token_expires_at' => 'datetime',
+        'last_sync_at' => 'datetime',
         'settings' => 'array',
     ];
 
@@ -90,7 +88,7 @@ class AccountingIntegration extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('status', 1);
+        return $query->where('is_active', true);
     }
 
     /**
@@ -106,6 +104,6 @@ class AccountingIntegration extends Model
      */
     public function getFullNameAttribute(): string
     {
-        return "{$this->integration_name} (" . ucfirst($this->integration_type) . ")";
+        return ucfirst($this->integration_type);
     }
 }

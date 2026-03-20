@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Jobs\SendApprovalPendingNotificationsJob;
 use App\Models\ApprovalWorkflow;
 use App\Models\ApprovalRequest;
 use App\Models\BudgetChangeOrder;
+use App\Models\ContractChangeOrder;
 use App\Models\PoChangeOrder;
 use App\Models\PurchaseOrder;
 use App\Models\Budget;
@@ -95,25 +97,17 @@ class ApprovalService
             $approvers = $this->resolveApproversFromWorkflow($firstWorkflow, $projectId, $amount);
             
             if ($approvers->isNotEmpty()) {
-                $request->current_approver_id = $approvers->first()->user_id;
+                $request->current_approver_id = $this->extractUserId($approvers->first());
                 $request->save();
-                
-                // Send notifications to approvers
-                $approverUsers = $approvers->map->user->filter();
-                if ($approverUsers->isNotEmpty()) {
-                    Notification::send($approverUsers, new ApprovalPendingNotification(
-                        $request,
-                        $entityType,
-                        $entityNumber,
-                        $amount,
-                        1 // Level 1
-                    ));
-                    
-                    Log::info('Approval notifications sent', [
-                        'request_id' => $request->ar_id,
-                        'recipients' => $approverUsers->count(),
-                    ]);
-                }
+
+                $this->queueApprovalPendingNotifications(
+                    $approvers,
+                    $request,
+                    $entityType,
+                    $entityNumber,
+                    (float) $amount,
+                    1
+                );
             }
             
             DB::commit();
@@ -159,7 +153,7 @@ class ApprovalService
                 ? json_decode($workflow->approver_user_ids, true) 
                 : $workflow->approver_user_ids;
             
-            return User::whereIn('user_id', $userIds)->get();
+            return User::whereIn('id', $userIds)->get();
         }
         
         return collect();
@@ -172,8 +166,7 @@ class ApprovalService
     {
         $query = ProjectRole::byProject($projectId)
             ->whereIn('role_name', $roleNames)
-            ->active()
-            ->with('user');
+            ->active();
         
         // Filter by approval limit if checking PO/CO approvals
         if ($amount) {
@@ -183,9 +176,17 @@ class ApprovalService
             });
         }
         
-        $projectRoles = $query->get();
-        
-        return $projectRoles->pluck('user')->unique('user_id');
+        $userIds = $query->pluck('user_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($userIds->isEmpty()) {
+            return collect();
+        }
+
+        return User::whereIn('id', $userIds->all())->get();
     }
 
     /**
@@ -259,11 +260,17 @@ class ApprovalService
             if ($nextWorkflow) {
                 $approvers = $nextWorkflow->getApprovers();
                 if ($approvers->isNotEmpty()) {
-                    $request->current_approver_id = $approvers->first()->user_id;
+                    $request->current_approver_id = $this->extractUserId($approvers->first());
                     $request->save();
-                    
-                    // Send notifications to next level approvers
-                    // TODO: Notification::send($approvers, new ApprovalRequestNotification($request));
+
+                    $this->queueApprovalPendingNotifications(
+                        $approvers,
+                        $request,
+                        (string) $request->request_type,
+                        (string) ($request->entity_number ?? ''),
+                        (float) $request->request_amount,
+                        (int) $request->current_level
+                    );
                 }
                 
                 DB::commit();
@@ -338,6 +345,11 @@ class ApprovalService
                 $budget = Budget::findOrFail($entityId);
                 // Budget approval logic if needed
                 break;
+
+            case 'contract_co':
+                $contractService = app(ContractService::class);
+                $contractService->approveChangeOrder($entityId, $userId);
+                break;
         }
     }
 
@@ -374,6 +386,13 @@ class ApprovalService
                 $po->porder_status = $status === 'pending_approval' ? 4 : ($status === 'approved' ? 5 : 6);
                 $po->save();
                 break;
+
+            case 'contract_co':
+                $cco = ContractChangeOrder::findOrFail($entityId);
+                $cco->cco_status = $status;
+                if ($reason) $cco->rejection_reason = $reason;
+                $cco->save();
+                break;
         }
     }
 
@@ -386,6 +405,7 @@ class ApprovalService
             'budget_co' => BudgetChangeOrder::find($entityId)->bco_number ?? null,
             'po_co' => PoChangeOrder::find($entityId)->poco_number ?? null,
             'po' => PurchaseOrder::find($entityId)->porder_no ?? null,
+            'contract_co' => ContractChangeOrder::find($entityId)->cco_number ?? null,
             default => null,
         };
     }
@@ -422,5 +442,77 @@ class ApprovalService
             'history' => $request->approval_history ?? [],
             'current_status' => $request->request_status ?? 'N/A',
         ];
+    }
+
+    /**
+     * Queue approval pending notifications for resolved approvers.
+     */
+    private function queueApprovalPendingNotifications($approvers, ApprovalRequest $request, string $entityType, ?string $entityNumber, float $amount, int $level): void
+    {
+        $recipientUserIds = collect($approvers)
+            ->map(fn ($approver) => $this->extractUserId($approver))
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($recipientUserIds)) {
+            return;
+        }
+
+        $requestId = (int) ($request->getKey() ?: ($request->request_id ?? 0));
+        if ($requestId <= 0) {
+            return;
+        }
+
+        try {
+            SendApprovalPendingNotificationsJob::dispatch(
+                $recipientUserIds,
+                $requestId,
+                $entityType,
+                (string) ($entityNumber ?? ''),
+                $amount,
+                $level
+            );
+
+            Log::info('Approval pending notifications queued', [
+                'request_id' => $requestId,
+                'level' => $level,
+                'recipients' => count($recipientUserIds),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Approval notification queue dispatch failed, sending synchronously', [
+                'request_id' => $requestId,
+                'level' => $level,
+                'error' => $e->getMessage(),
+            ]);
+
+            $users = User::whereIn('id', $recipientUserIds)->get();
+            if ($users->isNotEmpty()) {
+                Notification::sendNow($users, new ApprovalPendingNotification(
+                    $request,
+                    $entityType,
+                    (string) ($entityNumber ?? ''),
+                    $amount,
+                    $level
+                ));
+            }
+        }
+    }
+
+    /**
+     * Normalize user id from mixed approver objects.
+     */
+    private function extractUserId($approver): int
+    {
+        if (!$approver) {
+            return 0;
+        }
+
+        $id = $approver->id
+            ?? $approver->user_id
+            ?? (is_array($approver) ? ($approver['id'] ?? $approver['user_id'] ?? 0) : 0);
+
+        return (int) $id;
     }
 }

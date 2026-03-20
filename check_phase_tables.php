@@ -30,9 +30,9 @@ foreach ($tables as $table => $description) {
 echo "\nChecking Phase 1.5: Backorder Fields:\n";
 echo "======================================\n";
 try {
-    $columns = DB::select("SHOW COLUMNS FROM purchase_order_items WHERE Field LIKE '%backorder%'");
+    $columns = DB::select("SHOW COLUMNS FROM purchase_order_details WHERE Field LIKE '%backorder%'");
     if (count($columns) > 0) {
-        echo "✓ Backorder fields exist in purchase_order_items:\n";
+        echo "✓ Backorder fields exist in purchase_order_details:\n";
         foreach ($columns as $col) {
             echo "  - {$col->Field} ({$col->Type})\n";
         }

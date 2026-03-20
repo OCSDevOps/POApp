@@ -34,11 +34,10 @@ class BudgetController extends Controller
 
         $budgets = $query->orderBy('budget_created_at', 'DESC')->paginate(15);
         $projects = Project::active()->orderByName()->get();
-        $costCodes = CostCode::active()->orderByCode()->get();
+        $costCodes = CostCode::active()->orderById()->get();
 
-        // Get budget summary
+        // Get budget summary from DB view (view does not have company_id column)
         $summary = DB::table('vw_budget_summary')
-            ->where('company_id', session('company_id'))
             ->when($request->filled('project_id'), function ($q) use ($request) {
                 return $q->where('proj_id', $request->project_id);
             })
@@ -53,7 +52,7 @@ class BudgetController extends Controller
     public function create()
     {
         $projects = Project::active()->orderByName()->get();
-        $costCodes = CostCode::active()->orderByCode()->get();
+        $costCodes = CostCode::active()->orderById()->get();
 
         return view('admin.budget.create', compact('projects', 'costCodes'));
     }
@@ -65,7 +64,7 @@ class BudgetController extends Controller
     {
         $request->validate([
             'project_id' => 'required|exists:project_master,proj_id',
-            'cost_code_id' => 'required|exists:costcode_master,ccode_id',
+            'cost_code_id' => 'required|exists:cost_code_master,cc_id',
             'fiscal_year' => 'required|integer|min:2020|max:2100',
             'original_amount' => 'required|numeric|min:0',
             'description' => 'nullable|string|max:500',
@@ -91,7 +90,7 @@ class BudgetController extends Controller
                 'budget_revised_amount' => $request->original_amount,
                 'budget_committed_amount' => 0,
                 'budget_spent_amount' => 0,
-                'budget_description' => $request->description,
+                'budget_notes' => $request->description,
                 'budget_status' => 1,
                 'budget_created_by' => auth()->id(),
                 'budget_created_at' => now(),
@@ -115,14 +114,25 @@ class BudgetController extends Controller
         abort_unless($budget->company_id === session('company_id'), 403);
 
         // Get related purchase orders
-        $purchaseOrders = DB::table('porder_master')
-            ->join('porder_detail', 'porder_master.porder_id', '=', 'porder_detail.po_detail_porder_ms')
-            ->join('item_master', 'porder_detail.po_detail_item', '=', 'item_master.item_code')
-            ->where('porder_master.company_id', session('company_id'))
-            ->where('porder_master.porder_project_ms', $budget->budget_project_id)
+        $purchaseOrders = DB::table('purchase_order_master')
+            ->join('purchase_order_details', 'purchase_order_master.porder_id', '=', 'purchase_order_details.po_detail_porder_ms')
+            ->join('item_master', 'purchase_order_details.po_detail_item', '=', 'item_master.item_code')
+            ->where('purchase_order_master.company_id', session('company_id'))
+            ->where('purchase_order_master.porder_project_ms', $budget->budget_project_id)
             ->where('item_master.item_ccode_ms', $budget->budget_cost_code_id)
-            ->select('porder_master.*', DB::raw('SUM(porder_detail.po_detail_total) as total_amount'))
-            ->groupBy('porder_master.porder_id')
+            ->select(
+                'purchase_order_master.porder_id',
+                'purchase_order_master.porder_no',
+                'purchase_order_master.porder_createdate',
+                'purchase_order_master.porder_status',
+                DB::raw('SUM(purchase_order_details.po_detail_total) as total_amount')
+            )
+            ->groupBy(
+                'purchase_order_master.porder_id',
+                'purchase_order_master.porder_no',
+                'purchase_order_master.porder_createdate',
+                'purchase_order_master.porder_status'
+            )
             ->get();
 
         return view('admin.budget.show', compact('budget', 'purchaseOrders'));
@@ -136,7 +146,7 @@ class BudgetController extends Controller
         $budget = Budget::findOrFail($id);
         abort_unless($budget->company_id === session('company_id'), 403);
         $projects = Project::active()->orderByName()->get();
-        $costCodes = CostCode::active()->orderByCode()->get();
+        $costCodes = CostCode::active()->orderById()->get();
 
         return view('admin.budget.edit', compact('budget', 'projects', 'costCodes'));
     }
@@ -164,7 +174,7 @@ class BudgetController extends Controller
         try {
             $budget->update([
                 'budget_revised_amount' => $request->revised_amount,
-                'budget_description' => $request->description,
+                'budget_notes' => $request->description,
                 'budget_status' => $request->status,
                 'budget_modified_by' => auth()->id(),
                 'budget_modified_at' => now(),
@@ -253,8 +263,7 @@ class BudgetController extends Controller
      */
     public function summary(Request $request)
     {
-        $query = DB::table('vw_budget_summary')
-            ->where('company_id', session('company_id'));
+        $query = DB::table('vw_budget_summary');
 
         if ($request->filled('project_id')) {
             $query->where('proj_id', $request->project_id);

@@ -7,7 +7,7 @@ use App\Traits\CompanyScope;
 
 class BudgetChangeOrder extends Model
 {
-    use CompanyScope;
+    use CompanyScope, \App\Traits\HasAttachments;
     protected $table = 'budget_change_orders';
     protected $primaryKey = 'bco_id';
     

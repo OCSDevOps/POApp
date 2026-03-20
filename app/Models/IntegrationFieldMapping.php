@@ -15,15 +15,18 @@ class IntegrationFieldMapping extends Model
 
     protected $fillable = [
         'integration_id',
+        'company_id',
         'entity_type',
-        'internal_field',
+        'local_field',
         'external_field',
         'transformation',
         'transformation_params',
+        'is_active',
     ];
 
     protected $casts = [
         'transformation_params' => 'array',
+        'is_active' => 'boolean',
     ];
 
     /**

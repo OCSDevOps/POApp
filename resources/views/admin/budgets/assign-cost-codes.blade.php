@@ -1,4 +1,4 @@
-@extends('layout.master')
+@extends('layouts.admin')
 
 @section('title', 'Assign Cost Codes - ' . $project->proj_name)
 
@@ -15,6 +15,7 @@
                 </div>
 
                 <div class="card-body">
+                    @include('partials.validation-errors')
                     @if(session('success'))
                         <div class="alert alert-success alert-dismissible fade show">
                             {{ session('success') }}

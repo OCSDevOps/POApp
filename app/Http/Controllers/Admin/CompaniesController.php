@@ -76,7 +76,7 @@ class CompaniesController extends Controller
             'total_projects' => $company->projects()->count(),
             'active_projects' => $company->projects()->where('proj_status', 1)->count(),
             'total_pos' => $company->purchaseOrders()->count(),
-            'pending_pos' => $company->purchaseOrders()->where('porder_general_status', 'pending')->count(),
+            'pending_pos' => $company->purchaseOrders()->where('porder_status', 1)->count(),
             'total_suppliers' => $company->suppliers()->count(),
             'total_items' => $company->items()->count(),
         ];

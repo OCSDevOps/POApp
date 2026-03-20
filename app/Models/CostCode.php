@@ -16,16 +16,16 @@ class CostCode extends Model
 
     protected $fillable = [
         'cc_no',
-        'cc_name',
         'cc_description',
+        'cc_details',
         'cc_parent_code',
         'cc_category_code',
         'cc_subcategory_code',
         'cc_level',
         'cc_full_code',
         'cc_status',
-        'cc_created_by',
-        'cc_created_at',
+        'cc_createby',
+        'cc_createdate',
         'cc_modifyby',
         'cc_modifydate',
         'company_id',
@@ -34,7 +34,7 @@ class CostCode extends Model
     protected $casts = [
         'cc_status' => 'integer',
         'cc_level' => 'integer',
-        'cc_created_at' => 'datetime',
+        'cc_createdate' => 'datetime',
         'cc_modifydate' => 'datetime',
     ];
 

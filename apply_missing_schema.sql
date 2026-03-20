@@ -47,29 +47,29 @@ BEGIN TRY
     PRINT '';
 
     -- ======================================
-    -- Phase 1.5: Add backorder fields to purchase_order_items
+    -- Phase 1.5: Add backorder fields to purchase_order_details
     -- ======================================
-    PRINT 'Adding backorder fields to purchase_order_items...';
+    PRINT 'Adding backorder fields to purchase_order_details...';
     
-    IF COL_LENGTH('purchase_order_items', 'backorder_qty') IS NULL
+    IF COL_LENGTH('purchase_order_details', 'backorder_qty') IS NULL
     BEGIN
-        ALTER TABLE purchase_order_items ADD backorder_qty DECIMAL(10,2) NULL DEFAULT 0;
+        ALTER TABLE purchase_order_details ADD backorder_qty DECIMAL(10,2) NULL DEFAULT 0;
         PRINT '✓ backorder_qty added';
     END
     ELSE
         PRINT '- backorder_qty already exists';
     
-    IF COL_LENGTH('purchase_order_items', 'backorder_status') IS NULL
+    IF COL_LENGTH('purchase_order_details', 'backorder_status') IS NULL
     BEGIN
-        ALTER TABLE purchase_order_items ADD backorder_status NVARCHAR(20) NULL;
+        ALTER TABLE purchase_order_details ADD backorder_status NVARCHAR(20) NULL;
         PRINT '✓ backorder_status added';
     END
     ELSE
         PRINT '- backorder_status already exists';
     
-    IF COL_LENGTH('purchase_order_items', 'backorder_notes') IS NULL
+    IF COL_LENGTH('purchase_order_details', 'backorder_notes') IS NULL
     BEGIN
-        ALTER TABLE purchase_order_items ADD backorder_notes NVARCHAR(MAX) NULL;
+        ALTER TABLE purchase_order_details ADD backorder_notes NVARCHAR(MAX) NULL;
         PRINT '✓ backorder_notes added';
     END
     ELSE
@@ -230,10 +230,10 @@ BEGIN TRY
         PRINT '✓ Index on cost_code_master.full_code created';
     END
     
-    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_purchase_order_items_backorder' AND object_id = OBJECT_ID('purchase_order_items'))
+    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_purchase_order_details_backorder' AND object_id = OBJECT_ID('purchase_order_details'))
     BEGIN
-        CREATE INDEX IX_purchase_order_items_backorder ON purchase_order_items(backorder_status);
-        PRINT '✓ Index on purchase_order_items.backorder_status created';
+        CREATE INDEX IX_purchase_order_details_backorder ON purchase_order_details(backorder_status);
+        PRINT '✓ Index on purchase_order_details.backorder_status created';
     END
     PRINT '';
 

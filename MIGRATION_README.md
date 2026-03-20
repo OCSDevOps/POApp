@@ -144,7 +144,7 @@ Based on the CodeIgniter models, the following tables are used:
 - `master_user_type` - User types/roles
 - `permission_master` - User permissions
 - `purchase_order_master` - Purchase orders
-- `purchase_order_items` - PO line items
+- `purchase_order_details` - PO line items
 - `receive_order_master` - Receive orders
 - `project_master` - Projects
 - `project_details` - Project details

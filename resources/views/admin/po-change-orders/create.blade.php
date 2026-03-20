@@ -1,4 +1,4 @@
-@extends('layout.master')
+@extends('layouts.admin')
 
 @section('title', 'Create PO Change Order - ' . $purchaseOrder->porder_no)
 
@@ -15,6 +15,7 @@
                 </div>
 
                 <div class="card-body">
+                    @include('partials.validation-errors')
                     <!-- Current PO Summary -->
                     <div class="card bg-light mb-4">
                         <div class="card-body">
@@ -29,7 +30,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <strong>Current Total:</strong><br>
-                                    <span class="fs-5">${{ number_format($purchaseOrder->porder_total, 2) }}</span>
+                                    <span class="fs-5">${{ number_format($purchaseOrder->porder_total_amount, 2) }}</span>
                                 </div>
                                 <div class="col-md-3">
                                     <strong>Status:</strong><br>
@@ -75,7 +76,7 @@
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
                                         <input type="text" id="current_total" class="form-control" 
-                                               value="{{ number_format($purchaseOrder->porder_total, 2) }}" readonly>
+                                               value="{{ number_format($purchaseOrder->porder_total_amount, 2) }}" readonly>
                                     </div>
                                 </div>
                             </div>

@@ -106,16 +106,16 @@ class MultiTenancyIsolationTest extends TestCase
         // Create POs for each company
         $po1 = PurchaseOrder::create([
             'porder_no' => 'PO-001',
-            'porder_date' => now(),
-            'porder_general_status' => 'pending',
+            'porder_createdate' => now(),
+            'porder_status' => 1,
             'porder_project_ms' => $project1->proj_id,
             'company_id' => $this->company1->id,
         ]);
 
         $po2 = PurchaseOrder::create([
             'porder_no' => 'PO-002',
-            'porder_date' => now(),
-            'porder_general_status' => 'pending',
+            'porder_createdate' => now(),
+            'porder_status' => 1,
             'porder_project_ms' => $project2->proj_id,
             'company_id' => $this->company2->id,
         ]);

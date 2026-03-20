@@ -6,6 +6,7 @@
 <h4 class="mb-3">Edit Checklist</h4>
 <div class="card">
     <div class="card-body">
+        @include('partials.validation-errors')
         <form method="POST" action="{{ route('admin.checklists.update', $checklist) }}">
             @csrf
             @method('PUT')

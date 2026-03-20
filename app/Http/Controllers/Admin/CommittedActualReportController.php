@@ -40,9 +40,9 @@ class CommittedActualReportController extends Controller
         
         // Get projects for dropdown
         $projects = DB::table('project_master')
-            ->where('proj_company_id', $companyId)
+            ->where('company_id', $companyId)
             ->where('proj_status', 1)
-            ->select('proj_id', 'proj_name', 'proj_no')
+            ->select('proj_id', 'proj_name', 'proj_number')
             ->orderBy('proj_name')
             ->get();
         
@@ -80,14 +80,14 @@ class CommittedActualReportController extends Controller
             ->join('purchase_order_details as pod', 'pom.porder_id', '=', 'pod.po_detail_porder_ms')
             ->where('pom.porder_project_ms', $projectId)
             ->where('pom.company_id', $companyId)
-            ->where('pom.porder_general_status', '>=', 'submitted') // Approved POs only
-            ->whereBetween('pom.porder_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('pom.porder_status', 1) // Active POs only
+            ->whereBetween('pom.porder_createdate', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->select(
-                DB::raw("FORMAT(pom.porder_date, 'yyyy-MM') as month"),
+                DB::raw("FORMAT(pom.porder_createdate, 'yyyy-MM') as month"),
                 DB::raw('SUM(pod.po_detail_unitprice * pod.po_detail_quantity) as amount')
             )
-            ->groupBy(DB::raw("FORMAT(pom.porder_date, 'yyyy-MM')"))
-            ->orderBy(DB::raw("FORMAT(pom.porder_date, 'yyyy-MM')"))
+            ->groupBy(DB::raw("FORMAT(pom.porder_createdate, 'yyyy-MM')"))
+            ->orderBy(DB::raw("FORMAT(pom.porder_createdate, 'yyyy-MM')"))
             ->get()
             ->keyBy('month');
         
@@ -146,10 +146,10 @@ class CommittedActualReportController extends Controller
             ->join('purchase_order_details as pod', 'pom.porder_id', '=', 'pod.po_detail_porder_ms')
             ->where('pom.porder_project_ms', $projectId)
             ->where('pom.company_id', $companyId)
-            ->where('pom.porder_general_status', '>=', 'submitted')
-            ->whereBetween('pom.porder_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('pom.porder_status', 1)
+            ->whereBetween('pom.porder_createdate', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->sum(DB::raw('pod.po_detail_unitprice * pod.po_detail_quantity'));
-        
+
         // Total actual in period (company-scoped)
         $totalActual = DB::table('receive_order_master as rom')
             ->join('receive_order_details as rod', 'rom.rorder_id', '=', 'rod.ro_detail_rorder_ms')
@@ -164,7 +164,7 @@ class CommittedActualReportController extends Controller
             ->join('purchase_order_details as pod', 'pom.porder_id', '=', 'pod.po_detail_porder_ms')
             ->where('pom.porder_project_ms', $projectId)
             ->where('pom.company_id', $companyId)
-            ->where('pom.porder_general_status', '>=', 'submitted')
+            ->where('pom.porder_status', 1)
             ->sum(DB::raw('pod.po_detail_unitprice * pod.po_detail_quantity'));
         
         $cumulativeActual = DB::table('receive_order_master as rom')
@@ -178,8 +178,8 @@ class CommittedActualReportController extends Controller
         $poCount = DB::table('purchase_order_master')
             ->where('porder_project_ms', $projectId)
             ->where('company_id', $companyId)
-            ->where('porder_general_status', '>=', 'submitted')
-            ->whereBetween('porder_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('porder_status', 1)
+            ->whereBetween('porder_createdate', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->count();
         
         // RO Count (company-scoped)
@@ -218,12 +218,12 @@ class CommittedActualReportController extends Controller
             ->where('cc.company_id', $companyId)
             ->select(
                 'cc.cc_no',
-                'cc.cc_name',
+                'cc.cc_description',
                 'b.budget_revised_amount as budget',
                 DB::raw('SUM(DISTINCT pod.pod_price * pod.pod_qty) as committed'),
                 DB::raw('SUM(DISTINCT roi.roi_received_qty * roi.roi_unit_price) as actual')
             )
-            ->groupBy('cc.cc_no', 'cc.cc_name', 'b.budget_revised_amount')
+            ->groupBy('cc.cc_no', 'cc.cc_description', 'b.budget_revised_amount')
             ->orderBy('cc.cc_no')
             ->get();
     }
@@ -261,8 +261,8 @@ class CommittedActualReportController extends Controller
         $companyId = Session::get('company_id', 1);
         $project = DB::table('project_master')
             ->where('proj_id', $projectId)
-            ->where('proj_company_id', $companyId)
-            ->select('proj_name', 'proj_no')
+            ->where('company_id', $companyId)
+            ->select('proj_name', 'proj_number')
             ->first();
         
         if (!$project) {
@@ -274,7 +274,7 @@ class CommittedActualReportController extends Controller
         $summary = $this->calculateSummary($projectId, $startDate, $endDate);
         $costCodeBreakdown = $this->getCostCodeBreakdown($projectId, $startDate, $endDate);
         
-        $filename = 'committed_vs_actual_' . str_replace(' ', '_', $project->proj_no) . '_' . now()->format('Y-m-d') . '.csv';
+        $filename = 'committed_vs_actual_' . str_replace(' ', '_', $project->proj_number) . '_' . now()->format('Y-m-d') . '.csv';
         
         // Generate CSV
         ob_start();
@@ -284,7 +284,7 @@ class CommittedActualReportController extends Controller
         
         // Header
         fputcsv($output, ['Committed vs Actual Report']);
-        fputcsv($output, ['Project:', $project->proj_name . ' (' . $project->proj_no . ')']);
+        fputcsv($output, ['Project:', $project->proj_name . ' (' . $project->proj_number . ')']);
         fputcsv($output, ['Period:', $startDate->format('M d, Y') . ' - ' . $endDate->format('M d, Y')]);
         fputcsv($output, ['Generated:', now()->format('Y-m-d H:i:s')]);
         fputcsv($output, []);
@@ -293,9 +293,9 @@ class CommittedActualReportController extends Controller
         if ($summary) {
             fputcsv($output, ['Summary']);
             fputcsv($output, ['Total Budget:', '$' . number_format($summary['total_budget'], 2)]);
-            fputcsv($output, ['Period Committed:', '$' . number_format($summary['period_committed'], 2)];
-            fputcsv($output, ['Period Actual:', '$' . number_format($summary['period_actual'], 2)];
-            fputcsv($output, ['Cumulative Committed:', '$' . number_format($summary['cumulative_committed'], 2)];
+            fputcsv($output, ['Period Committed:', '$' . number_format($summary['period_committed'], 2)]);
+            fputcsv($output, ['Period Actual:', '$' . number_format($summary['period_actual'], 2)]);
+            fputcsv($output, ['Cumulative Committed:', '$' . number_format($summary['cumulative_committed'], 2)]);
             fputcsv($output, ['Cumulative Actual:', '$' . number_format($summary['cumulative_actual'], 2)]);
             fputcsv($output, ['Remaining Budget:', '$' . number_format($summary['remaining_budget'], 2)]);
             fputcsv($output, ['Utilization Rate:', number_format($summary['utilization_rate'], 2) . '%']);
@@ -325,7 +325,7 @@ class CommittedActualReportController extends Controller
             $utilization = $row->budget > 0 ? (($row->committed + $row->actual) / $row->budget * 100) : 0;
             fputcsv($output, [
                 $row->cc_no,
-                $row->cc_name,
+                $row->cc_description,
                 $row->budget,
                 $row->committed ?? 0,
                 $row->actual ?? 0,

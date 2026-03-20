@@ -19,15 +19,15 @@
                 </div>
                 <div class="card-body">
                     @if(session('success'))
-                        <div class="alert alert-success alert-dismissible">
-                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <div class="alert alert-success alert-dismissible fade show">
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             {{ session('success') }}
                         </div>
                     @endif
-                    
+
                     @if(session('error'))
-                        <div class="alert alert-danger alert-dismissible">
-                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <div class="alert alert-danger alert-dismissible fade show">
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             {{ session('error') }}
                         </div>
                     @endif
@@ -53,24 +53,24 @@
                                     <td>
                                         <strong>{{ $company->name }}</strong>
                                         @if($company->id == session('company_id'))
-                                            <span class="badge badge-info">Current</span>
+                                            <span class="badge bg-info">Current</span>
                                         @endif
                                     </td>
                                     <td>{{ $company->subdomain ?? 'N/A' }}</td>
                                     <td class="text-center">
-                                        <span class="badge badge-info">{{ $company->users_count }}</span>
+                                        <span class="badge bg-info">{{ $company->users_count }}</span>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge badge-success">{{ $company->projects_count }}</span>
+                                        <span class="badge bg-success">{{ $company->projects_count }}</span>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge badge-warning">{{ $company->purchase_orders_count }}</span>
+                                        <span class="badge bg-warning">{{ $company->purchase_orders_count }}</span>
                                     </td>
                                     <td>
                                         @if($company->status == 1)
-                                            <span class="badge badge-success">Active</span>
+                                            <span class="badge bg-success">Active</span>
                                         @else
-                                            <span class="badge badge-danger">Inactive</span>
+                                            <span class="badge bg-danger">Inactive</span>
                                         @endif
                                     </td>
                                     <td class="text-center">

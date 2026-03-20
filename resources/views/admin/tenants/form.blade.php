@@ -20,8 +20,8 @@
                 </div>
                 <div class="card-body">
                     @if(session('error'))
-                        <div class="alert alert-danger alert-dismissible">
-                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <div class="alert alert-danger alert-dismissible fade show">
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             {{ session('error') }}
                         </div>
                     @endif

@@ -110,13 +110,13 @@ class MultiTenancyTest extends TestCase
         // Create POs for each company
         $po1 = PurchaseOrder::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)->create([
             'porder_no' => 'PO-001',
-            'porder_general_status' => 1,
+            'porder_status' => 1,
             'company_id' => $this->company1->id,
         ]);
 
         $po2 = PurchaseOrder::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)->create([
             'porder_no' => 'PO-002',
-            'porder_general_status' => 1,
+            'porder_status' => 1,
             'company_id' => $this->company2->id,
         ]);
 

@@ -14,7 +14,7 @@ Audit all controllers for tenant isolation issues:
 1. **PurchaseOrderController** - 12 instances
    - Lines 74, 86, 87, 90, 147, 258, 259, 262, 299, 312, 384, 441
    - Issues: permission_master, item_package_master, taxgroup_master, unit_of_measure_tab, supplier_catalog_tab
-   - Risk: Direct inserts to purchase_order_items bypassing model
+   - Risk: Direct inserts to purchase_order_details bypassing model
 
 2. **ReceiveOrderController** - 3 instances
    - Lines 51, 262, 285
@@ -142,7 +142,7 @@ $summary = DB::table('vw_budget_summary')
 ### Pattern 4: Direct Inserts (Avoid)
 **Before:**
 ```php
-DB::table('purchase_order_items')->insert([
+DB::table('purchase_order_details')->insert([
     'po_detail_porder_ms' => $orderId,
     'po_detail_item' => $itemId,
     // ... other fields

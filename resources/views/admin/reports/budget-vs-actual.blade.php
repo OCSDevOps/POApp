@@ -11,6 +11,14 @@
                     <h3 class="card-title">Budget vs Actual Report</h3>
                     <div class="card-tools">
                         @if($selectedProjectId && $reportData)
+                        <form action="{{ route('admin.reports.budget-vs-actual.queue-export') }}" method="POST" class="d-inline">
+                            @csrf
+                            <input type="hidden" name="project_id" value="{{ $selectedProjectId }}">
+                            <input type="hidden" name="format" value="csv">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-clock"></i> Queue CSV Export
+                            </button>
+                        </form>
                         <a href="{{ route('admin.reports.budget-vs-actual.export', ['project_id' => $selectedProjectId, 'format' => 'excel']) }}" 
                            class="btn btn-success btn-sm">
                             <i class="fas fa-file-excel"></i> Export Excel
@@ -33,7 +41,7 @@
                                         <option value="">-- Select a Project --</option>
                                         @foreach($projects as $project)
                                             <option value="{{ $project->proj_id }}" {{ $selectedProjectId == $project->proj_id ? 'selected' : '' }}>
-                                                {{ $project->proj_no }} - {{ $project->proj_name }}
+                                                {{ $project->proj_number }} - {{ $project->proj_name }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -43,6 +51,62 @@
                     </form>
 
                     @if($selectedProjectId && $reportData)
+                        @if(isset($recentExports) && $recentExports->isNotEmpty())
+                        <div class="card card-outline card-primary mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Recent Queued Exports</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Status</th>
+                                                <th>Queued</th>
+                                                <th>Completed</th>
+                                                <th>File</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($recentExports as $export)
+                                            <tr>
+                                                <td>#{{ $export->report_export_id }}</td>
+                                                <td>
+                                                    @if($export->status === 'completed')
+                                                        <span class="badge bg-success">Completed</span>
+                                                    @elseif($export->status === 'failed')
+                                                        <span class="badge bg-danger">Failed</span>
+                                                    @elseif($export->status === 'processing')
+                                                        <span class="badge bg-warning">Processing</span>
+                                                    @else
+                                                        <span class="badge bg-secondary">Pending</span>
+                                                    @endif
+                                                </td>
+                                                <td>{{ optional($export->queued_at)->format('Y-m-d H:i') ?? '-' }}</td>
+                                                <td>{{ optional($export->completed_at)->format('Y-m-d H:i') ?? '-' }}</td>
+                                                <td>{{ $export->file_name ?? '-' }}</td>
+                                                <td>
+                                                    @if($export->status === 'completed')
+                                                        <a href="{{ route('admin.reports.budget-vs-actual.exports.download', $export->report_export_id) }}" class="btn btn-xs btn-success">
+                                                            <i class="fas fa-download"></i> Download
+                                                        </a>
+                                                    @elseif($export->status === 'failed' && $export->error_message)
+                                                        <span class="text-danger small">{{ \Illuminate\Support\Str::limit($export->error_message, 90) }}</span>
+                                                    @else
+                                                        <span class="text-muted small">In queue</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         <!-- Summary Cards -->
                         @if($summary)
                         <div class="row mb-4">
@@ -186,11 +250,11 @@
                                         </td>
                                         <td class="text-center">
                                             @if($row->status_level == 'danger')
-                                                <span class="badge badge-danger">Over Budget</span>
+                                                <span class="badge bg-danger">Over Budget</span>
                                             @elseif($row->status_level == 'warning')
-                                                <span class="badge badge-warning">At Risk</span>
+                                                <span class="badge bg-warning">At Risk</span>
                                             @else
-                                                <span class="badge badge-success">On Track</span>
+                                                <span class="badge bg-success">On Track</span>
                                             @endif
                                         </td>
                                     </tr>
@@ -251,4 +315,3 @@ $(document).ready(function() {
 }
 </style>
 @endpush
-@endsection

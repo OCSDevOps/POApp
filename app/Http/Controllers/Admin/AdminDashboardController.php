@@ -35,55 +35,39 @@ class AdminDashboardController extends Controller
         $data['fully_received'] = $this->getFullyReceive();
         $data['not_received'] = $this->getNotReceive();
 
-        // Supplier-specific data
+        // Supplier-specific data (u_type == 4)
         if ($user->u_type == 4) {
             $companyId = session('company_id');
-            $userInfo = DB::table('user_info')
-                ->where('username', $user->username)
+
+            // Try to find supplier linked to this user
+            $supplierInfo = DB::table('supplier_master')
+                ->where('sup_status', 1)
                 ->where('company_id', $companyId)
                 ->first();
-            
-            if ($userInfo && $userInfo->procore_supplier_id) {
-                $supplierInfo = DB::table('supplier_master')
-                    ->where('procore_supplier_id', $userInfo->procore_supplier_id)
-                    ->where('sup_status', 1)
-                    ->where('company_id', $companyId)
-                    ->first();
-                
-                if ($supplierInfo) {
-                    $supplierId = $supplierInfo->sup_id;
-                    
-                    $data['total_rfqs'] = DB::table('request_purchase_order')
-                        ->where('rporder_supplier_ms', $supplierId)
-                        ->where('company_id', $companyId)
-                        ->count();
-                    
-                    $data['waiting_rfqs'] = DB::table('request_purchase_order')
-                        ->where('rporder_supplier_ms', $supplierId)
-                        ->where('rporder_status', 'waiting for response')
-                        ->where('company_id', $companyId)
-                        ->count();
-                    
-                    $data['total_items'] = DB::table('supplier_catalog_tab')
-                        ->where('supcat_supplier', $supplierId)
-                        ->where('supcat_status', 1)
-                        ->where('company_id', $companyId)
-                        ->count();
-                    
-                    $currentDate = date('Y-m-d');
-                    $checkDate = date('Y-m-d', strtotime($currentDate . ' +7 day'));
-                    
-                    $data['expiring_items'] = DB::table('supplier_catalog_tab')
-                        ->where('supcat_supplier', $supplierId)
-                        ->where('supcat_lastdate', '<=', $checkDate)
-                        ->where('supcat_status', 1)
-                        ->where('company_id', $companyId)
-                        ->count();
-                }
+
+            if ($supplierInfo) {
+                $supplierId = $supplierInfo->sup_id;
+
+                $data['total_rfqs'] = 0;
+                $data['waiting_rfqs'] = 0;
+
+                $data['total_items'] = DB::table('supplier_catalog_tab')
+                    ->where('supcat_supplier', $supplierId)
+                    ->where('supcat_status', 1)
+                    ->count();
+
+                $currentDate = date('Y-m-d');
+                $checkDate = date('Y-m-d', strtotime($currentDate . ' +7 day'));
+
+                $data['expiring_items'] = DB::table('supplier_catalog_tab')
+                    ->where('supcat_supplier', $supplierId)
+                    ->where('supcat_lastdate', '<=', $checkDate)
+                    ->where('supcat_status', 1)
+                    ->count();
             }
         }
 
-        $data['u_details'] = $this->getUserDetails($user->id ?? $user->u_id);
+        $data['u_details'] = $this->getUserDetails($user->id);
 
         return view('admin.main', $data);
     }
@@ -128,12 +112,10 @@ class AdminDashboardController extends Controller
      */
     private function getUserDetails($uid)
     {
-        $companyId = session('company_id');
-        return DB::table('user_info')
-            ->leftJoin('master_user_type', 'master_user_type.mu_id', '=', 'user_info.u_type')
-            ->where('u_id', $uid)
-            ->where('user_info.company_id', $companyId)
-            ->select('user_info.*', 'master_user_type.mu_name')
+        return DB::table('users')
+            ->leftJoin('master_user_type', 'master_user_type.mu_id', '=', 'users.u_type')
+            ->where('users.id', $uid)
+            ->select('users.*', 'master_user_type.mu_name')
             ->first();
     }
 
@@ -142,22 +124,22 @@ class AdminDashboardController extends Controller
      */
     private function getTotalPO($projId = 0)
     {
-        $query = PurchaseOrder::whereNotNull('porder_type');
-        
+        $query = PurchaseOrder::whereNotNull('porder_description');
+
         if ($projId != 0) {
             $query->where('porder_project_ms', $projId);
         }
-        
+
         return $query->count();
     }
 
     /**
-     * Get pending PO count.
+     * Get pending PO count (active POs).
      */
     private function getPendingPO($projId = 0)
     {
-        $query = PurchaseOrder::whereNotNull('porder_type')
-            ->where('porder_general_status', 'pending');
+        $query = PurchaseOrder::whereNotNull('porder_description')
+            ->where('porder_status', 1);
         
         if ($projId != 0) {
             $query->where('porder_project_ms', $projId);
@@ -171,8 +153,8 @@ class AdminDashboardController extends Controller
      */
     private function getSubmittedPO($projId = 0)
     {
-        $query = PurchaseOrder::whereNotNull('porder_type')
-            ->where('porder_general_status', 'submitted');
+        $query = PurchaseOrder::whereNotNull('porder_description')
+            ->where('porder_status', 1);
         
         if ($projId != 0) {
             $query->where('porder_project_ms', $projId);
@@ -186,7 +168,7 @@ class AdminDashboardController extends Controller
      */
     private function getRTEPO($projId = 0)
     {
-        $query = PurchaseOrder::whereNotNull('porder_type')
+        $query = PurchaseOrder::whereNotNull('porder_description')
             ->where('integration_status', 'rte');
         
         if ($projId != 0) {
@@ -241,7 +223,7 @@ class AdminDashboardController extends Controller
      */
     private function getPOByType($type, $projId = 0)
     {
-        $query = PurchaseOrder::where('porder_type', $type);
+        $query = PurchaseOrder::where('porder_description', $type);
         
         if ($projId != 0) {
             $query->where('porder_project_ms', $projId);

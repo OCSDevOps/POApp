@@ -54,7 +54,7 @@ class ItemController extends Controller
 
         $items = $query->orderBy('item_name')->paginate(15);
         $categories = ItemCategory::active()->orderByName()->get();
-        $costCodes = CostCode::active()->orderByCode()->get();
+        $costCodes = CostCode::active()->orderById()->get();
 
         return view('admin.item.index', compact('items', 'categories', 'costCodes'));
     }
@@ -65,7 +65,7 @@ class ItemController extends Controller
     public function create()
     {
         $categories = ItemCategory::active()->orderByName()->get();
-        $costCodes = CostCode::active()->orderByCode()->get();
+        $costCodes = CostCode::active()->orderById()->get();
         $uoms = UnitOfMeasure::active()->orderByName()->get();
 
         return view('admin.item.create', compact('categories', 'costCodes', 'uoms'));
@@ -79,8 +79,8 @@ class ItemController extends Controller
         $request->validate([
             'item_code' => 'required|string|max:50|unique:item_master,item_code',
             'item_name' => 'required|string|max:200',
-            'category_id' => 'required|exists:itemcategory_master,itemcat_id',
-            'cost_code_id' => 'nullable|exists:costcode_master,ccode_id',
+            'category_id' => 'required|exists:item_category_tab,icat_id',
+            'cost_code_id' => 'nullable|exists:cost_code_master,cc_id',
             'uom_id' => 'nullable|exists:unit_of_measure_tab,uom_id',
             'description' => 'nullable|string|max:500',
         ]);
@@ -91,7 +91,7 @@ class ItemController extends Controller
                 'item_name' => $request->item_name,
                 'item_cat_ms' => $request->category_id,
                 'item_ccode_ms' => $request->cost_code_id,
-                'item_uom_id' => $request->uom_id,
+                'item_unit_ms' => $request->uom_id,
                 'item_description' => $request->description,
                 'item_createdate' => now(),
                 'item_createby' => auth()->id(),
@@ -130,10 +130,9 @@ class ItemController extends Controller
             ->limit(20)
             ->get();
 
-        // Get pricing summary from view
+        // Get pricing summary from DB view (view does not have company_id column)
         $pricingSummary = DB::table('vw_item_pricing_summary')
             ->where('item_id', $id)
-            ->where('company_id', session('company_id'))
             ->first();
 
         return view('admin.item.show', compact('item', 'supplierCatalog', 'priceHistory', 'pricingSummary'));
@@ -149,7 +148,7 @@ class ItemController extends Controller
         abort_unless($item->company_id === session('company_id'), 403);
 
         $categories = ItemCategory::active()->orderByName()->get();
-        $costCodes = CostCode::active()->orderByCode()->get();
+        $costCodes = CostCode::active()->orderById()->get();
         $uoms = UnitOfMeasure::active()->orderByName()->get();
 
         return view('admin.item.edit', compact('item', 'categories', 'costCodes', 'uoms'));
@@ -167,8 +166,8 @@ class ItemController extends Controller
         $request->validate([
             'item_code' => 'required|string|max:50|unique:item_master,item_code,' . $id . ',item_id',
             'item_name' => 'required|string|max:200',
-            'category_id' => 'required|exists:itemcategory_master,itemcat_id',
-            'cost_code_id' => 'nullable|exists:costcode_master,ccode_id',
+            'category_id' => 'required|exists:item_category_tab,icat_id',
+            'cost_code_id' => 'nullable|exists:cost_code_master,cc_id',
             'uom_id' => 'nullable|exists:unit_of_measure_tab,uom_id',
             'description' => 'nullable|string|max:500',
             'status' => 'required|in:0,1',
@@ -180,7 +179,7 @@ class ItemController extends Controller
                 'item_name' => $request->item_name,
                 'item_cat_ms' => $request->category_id,
                 'item_ccode_ms' => $request->cost_code_id,
-                'item_uom_id' => $request->uom_id,
+                'item_unit_ms' => $request->uom_id,
                 'item_description' => $request->description,
                 'item_modifydate' => now(),
                 'item_modifyby' => auth()->id(),
@@ -205,7 +204,7 @@ class ItemController extends Controller
         abort_unless($item->company_id === session('company_id'), 403);
 
         // Check if item is used in any PO
-        $usedInPo = DB::table('porder_detail')
+        $usedInPo = DB::table('purchase_order_details')
             ->where('po_detail_item', $item->item_code)
             ->where('company_id', session('company_id'))
             ->exists();
@@ -303,10 +302,20 @@ class ItemController extends Controller
     public function pricingSummary(Request $request)
     {
         $query = DB::table('vw_item_pricing_summary')
-            ->where('company_id', session('company_id'));
+            ->select(
+                'item_id',
+                'item_code',
+                'item_name',
+                'category_name',
+                DB::raw('AVG(current_price) as avg_price'),
+                DB::raw('MIN(current_price) as min_price'),
+                DB::raw('MAX(current_price) as max_price'),
+                DB::raw('COUNT(DISTINCT sup_id) as supplier_count')
+            )
+            ->groupBy('item_id', 'item_code', 'item_name', 'category_name');
 
         if ($request->filled('category_id')) {
-            $query->where('item_cat_ms', $request->category_id);
+            $query->where('category_name', $request->category_id);
         }
 
         if ($request->filled('search')) {
@@ -408,8 +417,8 @@ class ItemController extends Controller
                 fputcsv($file, [
                     $item->item_code,
                     $item->item_name,
-                    $item->category ? $item->category->itemcat_name : '',
-                    $item->costCode ? $item->costCode->ccode_code : '',
+                    $item->category ? $item->category->icat_name : '',
+                    $item->costCode ? $item->costCode->cc_no : '',
                     $item->item_description,
                     $item->item_status ? 'Active' : 'Inactive',
                 ]);

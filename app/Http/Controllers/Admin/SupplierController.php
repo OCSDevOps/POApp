@@ -7,9 +7,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Supplier;
+use App\Services\Cache\ReferenceDataCacheService;
 
 class SupplierController extends Controller
 {
+    protected $referenceDataCacheService;
+
+    public function __construct(ReferenceDataCacheService $referenceDataCacheService)
+    {
+        $this->referenceDataCacheService = $referenceDataCacheService;
+    }
+
     /**
      * Display a listing of suppliers.
      */
@@ -34,28 +42,25 @@ class SupplierController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'sup_name' => 'required|string|max:255',
+            'sup_name' => 'required|string|max:250',
             'sup_email' => 'required|email|unique:supplier_master,sup_email',
-            'sup_mobile' => 'nullable|unique:supplier_master,sup_mobile',
+            'sup_type' => 'nullable|integer|in:1,2,3',
         ]);
 
         Supplier::create([
             'sup_name' => $request->sup_name,
-            'sup_code' => $request->sup_code,
             'sup_email' => $request->sup_email,
             'sup_phone' => $request->sup_phone,
-            'sup_mobile' => $request->sup_mobile,
             'sup_address' => $request->sup_address,
-            'sup_city' => $request->sup_city,
-            'sup_state' => $request->sup_state,
-            'sup_zip' => $request->sup_zip,
-            'sup_country' => $request->sup_country,
             'sup_contact_person' => $request->sup_contact_person,
+            'sup_details' => $request->sup_details,
+            'sup_type' => $request->sup_type ?? 1,
             'sup_status' => 1,
-            'sup_created_by' => Auth::id(),
-            'sup_created_at' => now(),
+            'sup_createby' => Auth::id(),
+            'sup_createdate' => now(),
             'company_id' => session('company_id'),
         ]);
+        $this->referenceDataCacheService->clearCompanyReferenceCaches((int) session('company_id'));
 
         return redirect()->route('admin.suppliers.index')
             ->with('success', 'Supplier created successfully.');
@@ -89,9 +94,9 @@ class SupplierController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'sup_name' => 'required|string|max:255',
+            'sup_name' => 'required|string|max:250',
             'sup_email' => 'required|email|unique:supplier_master,sup_email,' . $id . ',sup_id',
-            'sup_mobile' => 'nullable|unique:supplier_master,sup_mobile,' . $id . ',sup_id',
+            'sup_type' => 'nullable|integer|in:1,2,3',
         ]);
 
         $supplier = Supplier::findOrFail($id);
@@ -99,19 +104,16 @@ class SupplierController extends Controller
 
         $supplier->update([
             'sup_name' => $request->sup_name,
-            'sup_code' => $request->sup_code,
             'sup_email' => $request->sup_email,
             'sup_phone' => $request->sup_phone,
-            'sup_mobile' => $request->sup_mobile,
             'sup_address' => $request->sup_address,
-            'sup_city' => $request->sup_city,
-            'sup_state' => $request->sup_state,
-            'sup_zip' => $request->sup_zip,
-            'sup_country' => $request->sup_country,
             'sup_contact_person' => $request->sup_contact_person,
-            'sup_modified_by' => Auth::id(),
-            'sup_modified_at' => now(),
+            'sup_details' => $request->sup_details,
+            'sup_type' => $request->sup_type ?? $supplier->sup_type,
+            'sup_modifyby' => Auth::id(),
+            'sup_modifydate' => now(),
         ]);
+        $this->referenceDataCacheService->clearCompanyReferenceCaches((int) session('company_id'));
 
         return redirect()->route('admin.suppliers.index')
             ->with('success', 'Supplier updated successfully.');
@@ -126,9 +128,10 @@ class SupplierController extends Controller
         
         $supplier->update([
             'sup_status' => $request->status,
-            'sup_modified_by' => Auth::id(),
-            'sup_modified_at' => now(),
+            'sup_modifyby' => Auth::id(),
+            'sup_modifydate' => now(),
         ]);
+        $this->referenceDataCacheService->clearCompanyReferenceCaches((int) session('company_id'));
 
         return response()->json(['success' => true, 'message' => 'Status updated successfully']);
     }
@@ -152,6 +155,7 @@ class SupplierController extends Controller
         }
 
         $supplier->delete();
+        $this->referenceDataCacheService->clearCompanyReferenceCaches((int) session('company_id'));
 
         return redirect()->route('admin.suppliers.index')
             ->with('success', 'Supplier deleted successfully.');

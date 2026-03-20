@@ -10,26 +10,36 @@ class PurchaseOrderItem extends Model
 {
     use HasFactory, CompanyScope;
 
-    protected $table = 'purchase_order_items';
-    protected $primaryKey = 'porder_item_id';
+    protected $table = 'purchase_order_details';
+    protected $primaryKey = 'po_detail_id';
     public $timestamps = false;
 
     protected $fillable = [
-        'porder_item_porder_ms',
-        'porder_item_code',
-        'porder_item_name',
-        'porder_item_qty',
-        'porder_item_price',
-        'porder_item_tax',
-        'porder_item_total',
-        'porder_item_ccode',
+        'po_detail_autogen',
+        'po_detail_porder_ms',
+        'po_detail_item',
+        'po_detail_sku',
+        'po_detail_taxcode',
+        'po_detail_quantity',
+        'po_detail_unitprice',
+        'po_detail_subtotal',
+        'po_detail_taxamount',
+        'po_detail_total',
+        'po_detail_createdate',
+        'po_detail_status',
+        'po_detail_tax_group',
+        'backordered_qty',
+        'expected_backorder_date',
+        'backorder_status',
         'company_id',
     ];
 
     protected $casts = [
-        'porder_item_price' => 'decimal:2',
-        'porder_item_tax' => 'decimal:2',
-        'porder_item_total' => 'decimal:2',
+        'po_detail_unitprice' => 'decimal:2',
+        'po_detail_subtotal' => 'decimal:2',
+        'po_detail_taxamount' => 'decimal:2',
+        'po_detail_total' => 'decimal:2',
+        'po_detail_createdate' => 'datetime',
     ];
 
     /**
@@ -37,7 +47,7 @@ class PurchaseOrderItem extends Model
      */
     public function purchaseOrder()
     {
-        return $this->belongsTo(PurchaseOrder::class, 'porder_item_porder_ms', 'porder_id');
+        return $this->belongsTo(PurchaseOrder::class, 'po_detail_porder_ms', 'porder_id');
     }
 
     /**
@@ -45,6 +55,14 @@ class PurchaseOrderItem extends Model
      */
     public function item()
     {
-        return $this->belongsTo(Item::class, 'porder_item_code', 'item_code');
+        return $this->belongsTo(Item::class, 'po_detail_item', 'item_code');
+    }
+
+    /**
+     * Scope for active items
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('po_detail_status', 1);
     }
 }

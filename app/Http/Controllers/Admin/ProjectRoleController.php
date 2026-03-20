@@ -28,7 +28,7 @@ class ProjectRoleController extends Controller
                 ->groupBy('pr_role');
             
             $users = User::where('u_type', 1) // Active users only
-                ->orderBy('u_name', 'ASC')
+                ->orderBy('name', 'ASC')
                 ->get();
             
             return view('admin.project-roles.index', compact('project', 'roles', 'users'));
@@ -44,7 +44,7 @@ class ProjectRoleController extends Controller
     {
         $request->validate([
             'project_id' => 'required|exists:project_master,proj_id',
-            'user_id' => 'required|exists:user_master,u_id',
+            'user_id' => 'required|exists:users,id',
             'role' => 'required|in:staff,project_manager,manager,director,finance,executive,admin',
             'can_approve' => 'boolean',
             'approval_limit' => 'nullable|numeric|min:0',
@@ -136,9 +136,9 @@ class ProjectRoleController extends Controller
             ->get()
             ->map(function ($pr) {
                 return [
-                    'id' => $pr->user->u_id,
-                    'name' => $pr->user->u_name,
-                    'email' => $pr->user->u_email,
+                    'id' => $pr->user->id,
+                    'name' => $pr->user->name,
+                    'email' => $pr->user->email,
                     'approval_limit' => $pr->pr_approval_limit,
                 ];
             });

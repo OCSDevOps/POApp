@@ -15,22 +15,27 @@ class Project extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'proj_number',
         'proj_name',
-        'proj_code',
         'proj_address',
-        'proj_city',
-        'proj_state',
-        'proj_zip',
-        'proj_country',
-        'proj_start_date',
-        'proj_end_date',
+        'proj_description',
+        'proj_contact',
         'proj_status',
-        'proj_created_by',
-        'proj_created_at',
-        'proj_modified_by',
-        'proj_modified_at',
+        'proj_createby',
+        'proj_createdate',
+        'proj_modifyby',
+        'proj_modifydate',
         'procore_project_id',
         'company_id',
+        'proj_default_calendar_id',
+        'proj_scheduling_mode',
+        'proj_progress_date',
+        'proj_target_finish_date',
+    ];
+
+    protected $casts = [
+        'proj_progress_date'      => 'datetime',
+        'proj_target_finish_date' => 'datetime',
     ];
 
     /**
@@ -71,5 +76,47 @@ class Project extends Model
     public function scopeOrderByName($query)
     {
         return $query->orderBy('proj_name', 'ASC');
+    }
+
+    public function takeoffs()
+    {
+        return $this->hasMany(Takeoff::class, 'to_project_id', 'proj_id');
+    }
+
+    /**
+     * Get the default schedule calendar for this project.
+     */
+    public function defaultCalendar()
+    {
+        return $this->belongsTo(ScheduleCalendar::class, 'proj_default_calendar_id', 'cal_id');
+    }
+
+    /**
+     * Get the schedule activities for this project.
+     */
+    public function scheduleActivities()
+    {
+        return $this->hasMany(ScheduleActivity::class, 'act_project_id', 'proj_id');
+    }
+
+    /**
+     * Get the schedule calendars for this project.
+     */
+    public function scheduleCalendars()
+    {
+        return $this->hasMany(ScheduleCalendar::class, 'cal_project_id', 'proj_id');
+    }
+
+    /**
+     * Get the schedule runs for this project.
+     */
+    public function scheduleRuns()
+    {
+        return $this->hasMany(ScheduleRun::class, 'run_project_id', 'proj_id');
+    }
+
+    public function contracts()
+    {
+        return $this->hasMany(Contract::class, 'contract_project_id', 'proj_id');
     }
 }

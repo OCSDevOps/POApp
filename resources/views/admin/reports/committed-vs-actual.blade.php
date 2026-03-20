@@ -32,7 +32,7 @@
                                         @foreach($projects as $project)
                                             <option value="{{ $project->proj_id }}" 
                                                 {{ $projectId == $project->proj_id ? 'selected' : '' }}>
-                                                {{ $project->proj_no }} - {{ $project->proj_name }}
+                                                {{ $project->proj_number }} - {{ $project->proj_name }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -203,7 +203,7 @@
                                                     @endphp
                                                     <tr>
                                                         <td>{{ $row->cc_no }}</td>
-                                                        <td>{{ $row->cc_name }}</td>
+                                                        <td>{{ $row->cc_description }}</td>
                                                         <td class="text-right">${{ number_format($row->budget, 2) }}</td>
                                                         <td class="text-right">${{ number_format($row->committed ?? 0, 2) }}</td>
                                                         <td class="text-right">${{ number_format($row->actual ?? 0, 2) }}</td>
@@ -399,4 +399,3 @@ $(document).ready(function() {
 }
 </style>
 @endpush
-@endsection

@@ -43,10 +43,8 @@
                 <label for="status" class="form-label">Status</label>
                 <select name="status" id="status" class="form-select">
                     <option value="">All Status</option>
-                    <option value="pending" {{ ($filters['status'] ?? '') == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="submitted" {{ ($filters['status'] ?? '') == 'submitted' ? 'selected' : '' }}>Submitted</option>
-                    <option value="approved" {{ ($filters['status'] ?? '') == 'approved' ? 'selected' : '' }}>Approved</option>
-                    <option value="rejected" {{ ($filters['status'] ?? '') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                    <option value="1" {{ ($filters['status'] ?? '') == '1' ? 'selected' : '' }}>Active</option>
+                    <option value="0" {{ ($filters['status'] ?? '') === '0' ? 'selected' : '' }}>Inactive</option>
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">
@@ -75,8 +73,8 @@
                         <th>PO Number</th>
                         <th>Project</th>
                         <th>Supplier</th>
-                        <th>Type</th>
-                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Created Date</th>
                         <th>Total</th>
                         <th>Status</th>
                         <th>Delivery</th>
@@ -94,21 +92,24 @@
                             </td>
                             <td>{{ $po->project->proj_name ?? 'N/A' }}</td>
                             <td>{{ $po->supplier->sup_name ?? 'N/A' }}</td>
-                            <td>{{ $po->porder_type }}</td>
-                            <td>{{ $po->porder_date ? date('M d, Y', strtotime($po->porder_date)) : 'N/A' }}</td>
-                            <td class="text-end">${{ number_format($po->porder_grand_total ?? 0, 2) }}</td>
+                            <td>{{ \Illuminate\Support\Str::limit($po->porder_description, 30) ?? '-' }}</td>
+                            <td>{{ $po->porder_createdate ? date('M d, Y', strtotime($po->porder_createdate)) : 'N/A' }}</td>
+                            <td class="text-end">${{ number_format($po->grand_total ?? 0, 2) }}</td>
                             <td>
                                 @php
-                                    $statusClass = match($po->porder_general_status) {
-                                        'pending' => 'warning',
-                                        'submitted' => 'info',
-                                        'approved' => 'success',
-                                        'rejected' => 'danger',
+                                    $statusClass = match((int) $po->porder_status) {
+                                        1 => 'success',
+                                        0 => 'secondary',
                                         default => 'secondary'
+                                    };
+                                    $statusText = match((int) $po->porder_status) {
+                                        1 => 'Active',
+                                        0 => 'Inactive',
+                                        default => 'Unknown'
                                     };
                                 @endphp
                                 <span class="badge bg-{{ $statusClass }}">
-                                    {{ ucfirst($po->porder_general_status ?? 'Unknown') }}
+                                    {{ $statusText }}
                                 </span>
                             </td>
                             <td>

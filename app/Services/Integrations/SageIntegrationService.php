@@ -373,8 +373,8 @@ class SageIntegrationService extends BaseIntegrationService
             'date' => $po->porder_order_date,
             'reference' => $po->porder_no,
             'due_date' => $po->porder_required_date,
-            'total_amount' => $po->porder_total,
-            'notes' => $po->porder_notes,
+            'total_amount' => $po->porder_total_amount,
+            'notes' => $po->porder_description,
             'invoice_lines' => $po->items->map(function ($item) {
                 return [
                     'description' => $item->item->item_name ?? '',
@@ -394,14 +394,10 @@ class SageIntegrationService extends BaseIntegrationService
         return [
             'contact_type_ids' => ['supplier'],
             'name' => $supplier->sup_name,
-            'reference' => $supplier->sup_code,
+            'reference' => $supplier->sup_name,
             'email' => $supplier->sup_email,
             'telephone' => $supplier->sup_phone,
-            'mobile' => $supplier->sup_mobile,
             'address_line_1' => $supplier->sup_address,
-            'city' => $supplier->sup_city,
-            'postal_code' => $supplier->sup_zip,
-            'country' => $supplier->sup_country,
         ];
     }
 

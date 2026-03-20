@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
-use App\Traits\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class RfqItem extends Model
 {
-    use HasFactory, CompanyScope;
+    use HasFactory;
 
     protected $table = 'rfq_items';
     protected $primaryKey = 'rfqi_id';
@@ -22,14 +21,11 @@ class RfqItem extends Model
         'rfqi_target_price',
         'rfqi_notes',
         'rfqi_created_at',
-        'project_id',
-        'company_id',
     ];
 
     protected $casts = [
         'rfqi_target_price' => 'decimal:2',
         'rfqi_created_at' => 'datetime',
-        'company_id' => 'integer',
     ];
 
     /**

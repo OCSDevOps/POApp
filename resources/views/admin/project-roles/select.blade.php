@@ -25,7 +25,7 @@
                                 <option value="">Select a project...</option>
                                 @foreach($projects as $project)
                                     <option value="{{ $project->proj_id }}">
-                                        {{ $project->proj_name }} ({{ $project->proj_code }})
+                                        {{ $project->proj_name }} ({{ $project->proj_number }})
                                     </option>
                                 @endforeach
                             </select>

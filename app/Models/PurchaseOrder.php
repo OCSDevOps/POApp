@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PurchaseOrder extends Model
 {
-    use HasFactory, CompanyScope;
+    use HasFactory, CompanyScope, \App\Traits\HasAttachments;
 
     protected $table = 'purchase_order_master';
     protected $primaryKey = 'porder_id';
@@ -18,20 +18,20 @@ class PurchaseOrder extends Model
         'porder_no',
         'porder_project_ms',
         'porder_supplier_ms',
-        'porder_type',
-        'porder_date',
-        'porder_delivery_date',
+        'porder_address',
+        'porder_delivery_note',
+        'porder_description',
+        'porder_total_item',
+        'porder_total_amount',
         'porder_delivery_status',
-        'porder_general_status',
-        'porder_total',
-        'porder_tax',
-        'porder_grand_total',
-        'porder_notes',
-        'porder_terms',
-        'porder_created_by',
-        'porder_created_at',
-        'porder_modified_by',
-        'porder_modified_at',
+        'porder_status',
+        'porder_total_tax',
+        'porder_createdate',
+        'porder_createby',
+        'porder_modifydate',
+        'porder_modifyby',
+        'porder_original_total',
+        'porder_change_orders_total',
         'integration_status',
         'procore_po_id',
         'company_id',
@@ -66,7 +66,15 @@ class PurchaseOrder extends Model
      */
     public function items()
     {
-        return $this->hasMany(PurchaseOrderItem::class, 'porder_item_porder_ms', 'porder_id');
+        return $this->hasMany(PurchaseOrderItem::class, 'po_detail_porder_ms', 'porder_id');
+    }
+
+    /**
+     * Get the attachments for this purchase order.
+     */
+    public function attachments()
+    {
+        return $this->hasMany(PurchaseOrderAttachment::class, 'po_attachment_porder_ms', 'porder_id');
     }
 
     /**
@@ -104,26 +112,26 @@ class PurchaseOrder extends Model
      */
     public function scopeByStatus($query, $status)
     {
-        if ($status) {
-            return $query->where('porder_general_status', $status);
+        if ($status !== null && $status !== '') {
+            return $query->where('porder_status', $status);
         }
         return $query;
     }
 
     /**
-     * Scope for pending orders
+     * Scope for active orders (porder_status = 1)
      */
-    public function scopePending($query)
+    public function scopeActive($query)
     {
-        return $query->where('porder_general_status', 'pending');
+        return $query->where('porder_status', 1);
     }
 
     /**
-     * Scope for submitted orders
+     * Scope for inactive orders (porder_status = 0)
      */
-    public function scopeSubmitted($query)
+    public function scopeInactive($query)
     {
-        return $query->where('porder_general_status', 'submitted');
+        return $query->where('porder_status', 0);
     }
 
     /**
@@ -167,10 +175,10 @@ class PurchaseOrder extends Model
     }
 
     /**
-     * Scope for filtering by type
+     * Accessor for grand total (computed: porder_total_amount + porder_total_tax).
      */
-    public function scopeByType($query, $type)
+    public function getGrandTotalAttribute()
     {
-        return $query->where('porder_type', $type);
+        return ($this->porder_total_amount ?? 0) + ($this->porder_total_tax ?? 0);
     }
 }

@@ -21,6 +21,7 @@ class Budget extends Model
         'budget_revised_amount',
         'budget_committed_amount',
         'budget_spent_amount',
+        'budget_remaining_amount',
         'budget_fiscal_year',
         'budget_notes',
         'budget_status',
@@ -30,6 +31,17 @@ class Budget extends Model
         'budget_modified_at',
         'procore_budget_id',
         'company_id',
+        'budget_change_orders_total',
+        'budget_committed',
+        'budget_actual',
+        'budget_warning_threshold',
+        'budget_critical_threshold',
+        'committed',
+        'actual',
+        'warning_notification_sent',
+        'critical_notification_sent',
+        'original_amount',
+        'variance',
     ];
 
     protected $casts = [
@@ -37,8 +49,20 @@ class Budget extends Model
         'budget_revised_amount' => 'decimal:2',
         'budget_committed_amount' => 'decimal:2',
         'budget_spent_amount' => 'decimal:2',
+        'budget_remaining_amount' => 'decimal:2',
         'budget_created_at' => 'datetime',
         'budget_modified_at' => 'datetime',
+        'budget_change_orders_total' => 'decimal:2',
+        'budget_committed' => 'decimal:2',
+        'budget_actual' => 'decimal:2',
+        'budget_warning_threshold' => 'decimal:2',
+        'budget_critical_threshold' => 'decimal:2',
+        'committed' => 'decimal:2',
+        'actual' => 'decimal:2',
+        'warning_notification_sent' => 'boolean',
+        'critical_notification_sent' => 'boolean',
+        'original_amount' => 'decimal:2',
+        'variance' => 'decimal:2',
     ];
 
     /**

@@ -23,12 +23,15 @@ class ApprovalWorkflow extends Model
         'is_active',
         'sort_order',
         'workflow_notes',
+        'approver_roles',
+        'project_id',
     ];
 
     protected $casts = [
         'amount_threshold_min' => 'decimal:2',
         'amount_threshold_max' => 'decimal:2',
         'approver_user_ids' => 'array',
+        'approver_roles' => 'array',
         'is_active' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -103,7 +106,7 @@ class ApprovalWorkflow extends Model
             return collect();
         }
         
-        return User::whereIn('user_id', $this->approver_user_ids)->get();
+        return User::whereIn('id', $this->approver_user_ids)->get();
     }
 
     /**

@@ -32,8 +32,8 @@ class PoChangeOrderService
                 'purchase_order_id' => $data['purchase_order_id'],
                 'poco_type' => $data['poco_type'] ?? 'amount_change',
                 'poco_amount' => $data['poco_amount'],
-                'previous_total' => $po->porder_total,
-                'new_total' => $po->porder_total + $data['poco_amount'],
+                'previous_total' => $po->porder_total_amount,
+                'new_total' => $po->porder_total_amount + $data['poco_amount'],
                 'poco_description' => $data['poco_description'],
                 'poco_notes' => $data['poco_notes'] ?? null,
                 'poco_reference' => $data['poco_reference'] ?? null,
@@ -87,10 +87,10 @@ class PoChangeOrderService
             $po = $poco->purchaseOrder;
             
             if (!$po->porder_original_total) {
-                $po->porder_original_total = $po->porder_total;
+                $po->porder_original_total = $po->porder_total_amount;
             }
             
-            $po->porder_total = $poco->new_total;
+            $po->porder_total_amount = $poco->new_total;
             $po->porder_change_orders_total += $poco->poco_amount;
             $po->save();
             
@@ -149,7 +149,7 @@ class PoChangeOrderService
     public function validatePoChangeOrder($poId, $changeAmount): array
     {
         $po = PurchaseOrder::findOrFail($poId);
-        $newTotal = $po->porder_total + $changeAmount;
+        $newTotal = $po->porder_total_amount + $changeAmount;
         
         if ($changeAmount > 0) {
             // Increase - check budget
@@ -171,7 +171,7 @@ class PoChangeOrderService
         
         return [
             'valid' => true,
-            'current_total' => $po->porder_total,
+            'current_total' => $po->porder_total_amount,
             'change_amount' => $changeAmount,
             'new_total' => $newTotal,
         ];

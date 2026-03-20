@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Commitment extends Model
 {
-    use HasFactory;
+    use HasFactory, CompanyScope;
 
     protected $table = 'commitment_master';
     protected $primaryKey = 'commit_id';
@@ -41,6 +42,7 @@ class Commitment extends Model
         'commit_modified_by',
         'commit_modified_at',
         'procore_commitment_id',
+        'company_id',
     ];
 
     protected $casts = [

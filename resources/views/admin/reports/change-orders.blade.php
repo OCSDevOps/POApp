@@ -30,7 +30,7 @@
                                         @foreach($projects as $project)
                                             <option value="{{ $project->proj_id }}" 
                                                 {{ $filters['project_id'] == $project->proj_id ? 'selected' : '' }}>
-                                                {{ $project->proj_no }} - {{ $project->proj_name }}
+                                                {{ $project->proj_number }} - {{ $project->proj_name }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -167,7 +167,7 @@
                                             <div class="col-md-3">
                                                 <div class="progress-group">
                                                     <span class="progress-text">Approved</span>
-                                                    <span class="float-right"><b>{{ $summary['approved_count'] }}</b>/{{ $summary['total_count'] }}</span>
+                                                    <span class="float-end"><b>{{ $summary['approved_count'] }}</b>/{{ $summary['total_count'] }}</span>
                                                     <div class="progress">
                                                         <div class="progress-bar bg-success" style="width: {{ $summary['total_count'] > 0 ? ($summary['approved_count'] / $summary['total_count'] * 100) : 0 }}%"></div>
                                                     </div>
@@ -176,7 +176,7 @@
                                             <div class="col-md-3">
                                                 <div class="progress-group">
                                                     <span class="progress-text">Pending</span>
-                                                    <span class="float-right"><b>{{ $summary['pending_count'] }}</b>/{{ $summary['total_count'] }}</span>
+                                                    <span class="float-end"><b>{{ $summary['pending_count'] }}</b>/{{ $summary['total_count'] }}</span>
                                                     <div class="progress">
                                                         <div class="progress-bar bg-warning" style="width: {{ $summary['total_count'] > 0 ? ($summary['pending_count'] / $summary['total_count'] * 100) : 0 }}%"></div>
                                                     </div>
@@ -185,7 +185,7 @@
                                             <div class="col-md-3">
                                                 <div class="progress-group">
                                                     <span class="progress-text">Rejected</span>
-                                                    <span class="float-right"><b>{{ $summary['rejected_count'] }}</b>/{{ $summary['total_count'] }}</span>
+                                                    <span class="float-end"><b>{{ $summary['rejected_count'] }}</b>/{{ $summary['total_count'] }}</span>
                                                     <div class="progress">
                                                         <div class="progress-bar bg-danger" style="width: {{ $summary['total_count'] > 0 ? ($summary['rejected_count'] / $summary['total_count'] * 100) : 0 }}%"></div>
                                                     </div>
@@ -194,7 +194,7 @@
                                             <div class="col-md-3">
                                                 <div class="progress-group">
                                                     <span class="progress-text">Draft</span>
-                                                    <span class="float-right"><b>{{ $summary['draft_count'] }}</b>/{{ $summary['total_count'] }}</span>
+                                                    <span class="float-end"><b>{{ $summary['draft_count'] }}</b>/{{ $summary['total_count'] }}</span>
                                                     <div class="progress">
                                                         <div class="progress-bar bg-secondary" style="width: {{ $summary['total_count'] > 0 ? ($summary['draft_count'] / $summary['total_count'] * 100) : 0 }}%"></div>
                                                     </div>
@@ -240,9 +240,9 @@
                                                     <tr>
                                                         <td>
                                                             @if($order->co_type === 'budget')
-                                                                <span class="badge badge-info">Budget CO</span>
+                                                                <span class="badge bg-info">Budget CO</span>
                                                             @else
-                                                                <span class="badge badge-primary">PO CO</span>
+                                                                <span class="badge bg-primary">PO CO</span>
                                                             @endif
                                                         </td>
                                                         <td><strong>{{ $order->number }}</strong></td>
@@ -259,22 +259,22 @@
                                                         <td class="text-center">
                                                             @switch($order->status)
                                                                 @case('approved')
-                                                                    <span class="badge badge-success">Approved</span>
+                                                                    <span class="badge bg-success">Approved</span>
                                                                     @break
                                                                 @case('pending_approval')
-                                                                    <span class="badge badge-warning">Pending</span>
+                                                                    <span class="badge bg-warning">Pending</span>
                                                                     @break
                                                                 @case('rejected')
-                                                                    <span class="badge badge-danger">Rejected</span>
+                                                                    <span class="badge bg-danger">Rejected</span>
                                                                     @break
                                                                 @case('draft')
-                                                                    <span class="badge badge-secondary">Draft</span>
+                                                                    <span class="badge bg-secondary">Draft</span>
                                                                     @break
                                                                 @case('cancelled')
-                                                                    <span class="badge badge-dark">Cancelled</span>
+                                                                    <span class="badge bg-dark">Cancelled</span>
                                                                     @break
                                                                 @default
-                                                                    <span class="badge badge-light">{{ ucwords($order->status) }}</span>
+                                                                    <span class="badge bg-light">{{ ucwords($order->status) }}</span>
                                                             @endswitch
                                                         </td>
                                                         <td>{{ $order->created_by_name ?? 'N/A' }}</td>
@@ -358,4 +358,3 @@ $(document).ready(function() {
 }
 </style>
 @endpush
-@endsection

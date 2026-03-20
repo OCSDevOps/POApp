@@ -1,4 +1,4 @@
-@extends('layout.master')
+@extends('layouts.admin')
 
 @section('title', 'Create Budget Change Order - ' . $project->proj_name)
 
@@ -15,6 +15,7 @@
                 </div>
 
                 <div class="card-body">
+                    @include('partials.validation-errors')
                     @if(session('error'))
                         <div class="alert alert-danger alert-dismissible fade show">
                             {{ session('error') }}

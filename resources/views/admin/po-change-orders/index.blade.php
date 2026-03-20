@@ -1,4 +1,4 @@
-@extends('layout.master')
+@extends('layouts.admin')
 
 @section('title', 'PO Change Orders')
 

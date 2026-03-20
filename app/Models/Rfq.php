@@ -4,11 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\CompanyScope;
 
 class Rfq extends Model
 {
-    use HasFactory, CompanyScope;
+    use HasFactory, \App\Traits\CompanyScope, \App\Traits\HasAttachments;
 
     protected $table = 'rfq_master';
     protected $primaryKey = 'rfq_id';
@@ -32,14 +31,12 @@ class Rfq extends Model
         'rfq_created_at',
         'rfq_modified_by',
         'rfq_modified_at',
-        'company_id',
     ];
 
     protected $casts = [
         'rfq_due_date' => 'date',
         'rfq_created_at' => 'datetime',
         'rfq_modified_at' => 'datetime',
-        'company_id' => 'integer',
     ];
 
     /**

@@ -24,20 +24,20 @@ class ProcoreController extends Controller
     public function index()
     {
         // Get sync status
-        $lastSync = ProcoreSyncLog::orderBy('sync_started_at', 'DESC')->first();
+        $lastSync = ProcoreSyncLog::orderBy('sync_created_at', 'DESC')->first();
         
         // Get sync history
-        $syncHistory = ProcoreSyncLog::orderBy('sync_started_at', 'DESC')
+        $syncHistory = ProcoreSyncLog::orderBy('sync_created_at', 'DESC')
             ->limit(20)
             ->get();
 
         // Get project mappings (scoped by company via project_master)
         $companyId = session('company_id');
         $projectMappings = DB::table('procore_project_mapping')
-            ->join('project_master', 'procore_project_mapping.local_project_id', '=', 'project_master.proj_id')
-            ->where('project_master.proj_company_id', $companyId)
+            ->join('project_master', 'procore_project_mapping.ppm_local_project_id', '=', 'project_master.proj_id')
+            ->where('project_master.company_id', $companyId)
             ->select('procore_project_mapping.*', 'project_master.proj_name')
-            ->orderBy('last_synced_at', 'DESC')
+            ->orderBy('ppm_last_sync_at', 'DESC')
             ->get();
 
         // Get cost code mappings count
@@ -147,7 +147,7 @@ class ProcoreController extends Controller
     public function pushPurchaseOrder(Request $request)
     {
         $request->validate([
-            'po_id' => 'required|exists:porder_master,porder_id',
+            'po_id' => 'required|exists:purchase_order_master,porder_id',
         ]);
 
         try {
@@ -174,19 +174,19 @@ class ProcoreController extends Controller
     {
         $companyId = session('company_id');
         $mappings = DB::table('procore_project_mapping')
-            ->leftJoin('project_master', 'procore_project_mapping.local_project_id', '=', 'project_master.proj_id')
+            ->leftJoin('project_master', 'procore_project_mapping.ppm_local_project_id', '=', 'project_master.proj_id')
             ->where(function($q) use ($companyId) {
                 $q->whereNull('project_master.proj_id')
-                  ->orWhere('project_master.proj_company_id', $companyId);
+                  ->orWhere('project_master.company_id', $companyId);
             })
             ->select('procore_project_mapping.*', 'project_master.proj_name')
-            ->orderBy('procore_project_name')
+            ->orderBy('ppm_procore_project_id')
             ->get();
 
         $unmappedProjects = Project::whereNotIn('proj_id', function ($q) {
-            $q->select('local_project_id')
+            $q->select('ppm_local_project_id')
               ->from('procore_project_mapping')
-              ->whereNotNull('local_project_id');
+              ->whereNotNull('ppm_local_project_id');
         })->get();
 
         return view('admin.procore.project_mappings', compact('mappings', 'unmappedProjects'));
@@ -202,10 +202,10 @@ class ProcoreController extends Controller
         ]);
 
         DB::table('procore_project_mapping')
-            ->where('procore_project_id', $procoreProjectId)
+            ->where('ppm_procore_project_id', $procoreProjectId)
             ->update([
-                'local_project_id' => $request->local_project_id,
-                'last_synced_at' => now(),
+                'ppm_local_project_id' => $request->local_project_id,
+                'ppm_last_sync_at' => now(),
             ]);
 
         return back()->with('success', 'Project mapping updated.');
@@ -218,24 +218,24 @@ class ProcoreController extends Controller
     {
         $companyId = session('company_id');
         $query = DB::table('procore_cost_code_mapping')
-            ->leftJoin('cost_code_master', 'procore_cost_code_mapping.local_cost_code_id', '=', 'cost_code_master.cc_id')
+            ->leftJoin('cost_code_master', 'procore_cost_code_mapping.pccm_local_cost_code_id', '=', 'cost_code_master.cc_id')
             ->where(function($q) use ($companyId) {
                 $q->whereNull('cost_code_master.cc_id')
                   ->orWhere('cost_code_master.company_id', $companyId);
             })
-            ->select('procore_cost_code_mapping.*', 'cost_code_master.cc_no', 'cost_code_master.cc_name');
+            ->select('procore_cost_code_mapping.*', 'cost_code_master.cc_no', 'cost_code_master.cc_description');
 
         if ($request->filled('project_id')) {
-            $query->where('procore_project_id', $request->project_id);
+            $query->where('pccm_procore_project_id', $request->project_id);
         }
 
-        $mappings = $query->orderBy('procore_cost_code')->paginate(50);
+        $mappings = $query->orderBy('pccm_procore_cost_code_id')->paginate(50);
 
         $projects = DB::table('procore_project_mapping')
-            ->join('project_master', 'procore_project_mapping.local_project_id', '=', 'project_master.proj_id')
-            ->where('project_master.proj_company_id', $companyId)
-            ->select('procore_project_id', 'procore_project_name')
-            ->orderBy('procore_project_name')
+            ->join('project_master', 'procore_project_mapping.ppm_local_project_id', '=', 'project_master.proj_id')
+            ->where('project_master.company_id', $companyId)
+            ->select('ppm_procore_project_id', 'ppm_procore_company_id')
+            ->orderBy('ppm_procore_project_id')
             ->get();
 
         return view('admin.procore.cost_code_mappings', compact('mappings', 'projects'));

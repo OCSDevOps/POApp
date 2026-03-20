@@ -27,6 +27,9 @@ class ApprovalRequest extends Model
         'request_notes',
         'submitted_at',
         'completed_at',
+        'override_by',
+        'override_reason',
+        'override_at',
     ];
 
     protected $casts = [
@@ -34,6 +37,7 @@ class ApprovalRequest extends Model
         'approval_history' => 'array',
         'submitted_at' => 'datetime',
         'completed_at' => 'datetime',
+        'override_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -51,7 +55,7 @@ class ApprovalRequest extends Model
      */
     public function requester()
     {
-        return $this->belongsTo(User::class, 'requested_by', 'user_id');
+        return $this->belongsTo(User::class, 'requested_by', 'id');
     }
 
     /**
@@ -59,7 +63,7 @@ class ApprovalRequest extends Model
      */
     public function currentApprover()
     {
-        return $this->belongsTo(User::class, 'current_approver_id', 'user_id');
+        return $this->belongsTo(User::class, 'current_approver_id', 'id');
     }
 
     /**
@@ -73,6 +77,7 @@ class ApprovalRequest extends Model
             'po' => PurchaseOrder::find($this->entity_id),
             'po_co' => PoChangeOrder::find($this->entity_id),
             'receive_order' => ReceiveOrder::find($this->entity_id),
+            'contract_co' => ContractChangeOrder::find($this->entity_id),
             default => null,
         };
     }

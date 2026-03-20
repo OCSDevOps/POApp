@@ -116,7 +116,7 @@
 <body>
     <div class="header">
         <h1>Budget vs Actual Report</h1>
-        <p><strong>{{ $project->proj_name }}</strong> ({{ $project->proj_no }})</p>
+        <p><strong>{{ $project->proj_name }}</strong> ({{ $project->proj_number }})</p>
         <p>Generated on {{ now()->format('F j, Y \a\t g:i A') }}</p>
     </div>
 

@@ -2,7 +2,7 @@
 
 @section('title', 'Cost Code Hierarchy')
 
-@section('styles')
+@push('styles')
 <style>
 .hierarchy-tree {
     padding-left: 0;
@@ -66,7 +66,7 @@
     top: 20px;
 }
 </style>
-@endsection
+@endpush
 
 @section('content')
 <div class="container-fluid">
@@ -246,7 +246,7 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
 $(document).ready(function() {
     // Live preview of full code
@@ -316,4 +316,4 @@ $(document).ready(function() {
     });
 });
 </script>
-@endsection
+@endpush

@@ -1,4 +1,4 @@
-@extends('layout.master')
+@extends('layouts.admin')
 
 @section('title', 'PO Change Order - ' . $changeOrder->poco_number)
 
@@ -39,7 +39,6 @@
                             </form>
                             <form method="POST" action="{{ route('admin.po-change-orders.cancel', $changeOrder->poco_id) }}" class="d-inline">
                                 @csrf
-                                @method('DELETE')
                                 <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">
                                     <i class="fas fa-times"></i> Cancel PCO
                                 </button>
@@ -91,7 +90,7 @@
                                 </tr>
                                 <tr>
                                     <th>Created By:</th>
-                                    <td>{{ $changeOrder->creator->u_name ?? 'N/A' }}</td>
+                                    <td>{{ $changeOrder->creator->name ?? 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Created Date:</th>
@@ -100,7 +99,7 @@
                                 @if($changeOrder->poco_status == 'approved')
                                     <tr>
                                         <th>Approved By:</th>
-                                        <td>{{ $changeOrder->approver->u_name ?? 'N/A' }}</td>
+                                        <td>{{ $changeOrder->approver->name ?? 'N/A' }}</td>
                                     </tr>
                                     <tr>
                                         <th>Approved Date:</th>
@@ -221,7 +220,7 @@
                                             <div class="timeline-content">
                                                 <div class="d-flex justify-content-between align-items-start">
                                                     <div>
-                                                        <strong>{{ $approval->user->u_name }}</strong>
+                                                        <strong>{{ $approval->user->name }}</strong>
                                                         <span class="badge bg-{{ $approval->apah_action == 'approved' ? 'success' : ($approval->apah_action == 'rejected' ? 'danger' : 'warning') }} ms-2">
                                                             {{ ucfirst($approval->apah_action) }}
                                                         </span>

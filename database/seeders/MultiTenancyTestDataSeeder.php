@@ -100,11 +100,8 @@ class MultiTenancyTestDataSeeder extends Seeder
         foreach ($data['projects'] as $projectName) {
             Project::create([
                 'proj_name' => $projectName,
-                'proj_code' => strtoupper(substr(str_replace(' ', '', $projectName), 0, 3)) . rand(100, 999),
-                'proj_address' => rand(100, 999) . ' Project Ave',
-                'proj_city' => 'Buildsville',
-                'proj_state' => 'CA',
-                'proj_zip' => '9' . rand(1000, 9999),
+                'proj_number' => strtoupper(substr(str_replace(' ', '', $projectName), 0, 3)) . rand(100, 999),
+                'proj_address' => rand(100, 999) . ' Project Ave, Buildsville, CA 9' . rand(1000, 9999),
                 'proj_status' => 1,
                 'proj_created_by' => 1,
                 'company_id' => $company->id,

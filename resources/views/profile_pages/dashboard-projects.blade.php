@@ -1,4 +1,4 @@
-@extends('layouts/dashboard')
+@extends('layouts.dashboard')
 
 @section('content')
 
@@ -161,7 +161,7 @@
                                         </td>
                                         <td>
                                             <span class="text-muted font-13">Status</span> <br>
-                                            <span class="badge badge-warning-lighten">In-progress</span>
+                                            <span class="badge bg-warning">In-progress</span>
                                         </td>
                                         <td>
                                             <span class="text-muted font-13">Assigned to</span>
@@ -183,7 +183,7 @@
                                         </td>
                                         <td>
                                             <span class="text-muted font-13">Status</span> <br>
-                                            <span class="badge badge-danger-lighten">Outdated</span>
+                                            <span class="badge bg-danger">Outdated</span>
                                         </td>
                                         <td>
                                             <span class="text-muted font-13">Assigned to</span>
@@ -205,7 +205,7 @@
                                         </td>
                                         <td>
                                             <span class="text-muted font-13">Status</span> <br>
-                                            <span class="badge badge-success-lighten">Completed</span>
+                                            <span class="badge bg-success">Completed</span>
                                         </td>
                                         <td>
                                             <span class="text-muted font-13">Assigned to</span>
@@ -227,7 +227,7 @@
                                         </td>
                                         <td>
                                             <span class="text-muted font-13">Status</span> <br>
-                                            <span class="badge badge-warning-lighten">In-progress</span>
+                                            <span class="badge bg-warning">In-progress</span>
                                         </td>
                                         <td>
                                             <span class="text-muted font-13">Assigned to</span>

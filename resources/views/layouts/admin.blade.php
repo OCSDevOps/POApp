@@ -129,6 +129,44 @@
             color: #dddfeb;
         }
         
+        /* Collapsible sub-menus */
+        .sidebar-nav .nav-link[data-bs-toggle="collapse"] {
+            position: relative;
+        }
+        .sidebar-nav .nav-link[data-bs-toggle="collapse"]::after {
+            content: '\f107';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 1rem;
+            transition: transform 0.3s;
+        }
+        .sidebar-nav .nav-link[data-bs-toggle="collapse"][aria-expanded="true"]::after {
+            transform: rotate(180deg);
+        }
+        .sidebar-nav .collapse .nav-link,
+        .sidebar-nav .collapsing .nav-link {
+            padding-left: 3rem;
+            font-size: 0.875rem;
+        }
+
+        /* BS4-compat utility classes */
+        .font-weight-bold { font-weight: 700 !important; }
+        .text-gray-800 { color: #5a5c69 !important; }
+        .text-gray-300 { color: #dddfeb !important; }
+        .border-left-primary { border-left: 4px solid #4e73df !important; }
+        .border-left-success { border-left: 4px solid #1cc88a !important; }
+        .border-left-warning { border-left: 4px solid #f6c23e !important; }
+        .border-left-info { border-left: 4px solid #36b9cc !important; }
+        .border-left-danger { border-left: 4px solid #e74a3b !important; }
+        .text-xs { font-size: 0.7rem; }
+        .text-right { text-align: right !important; }
+        .text-left { text-align: left !important; }
+        .no-gutters { --bs-gutter-x: 0; --bs-gutter-y: 0; }
+        .no-gutters > .col, .no-gutters > [class*="col-"] { padding-right: 0; padding-left: 0; }
+        .float-right { float: right !important; }
+        .float-left { float: left !important; }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -164,28 +202,231 @@
                     <span>Dashboard</span>
                 </a>
             </li>
-            
+
+            <hr class="sidebar-divider my-2 bg-light opacity-25">
+            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">PURCHASE ORDER MANAGEMENT</div></li>
+
             <li class="nav-item">
                 <a href="{{ route('admin.porder.index') }}" class="nav-link {{ request()->routeIs('admin.porder.*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice"></i>
                     <span>Purchase Orders</span>
                 </a>
             </li>
-            
+            <li class="nav-item">
+                <a href="{{ route('admin.template.index') }}" class="nav-link {{ request()->routeIs('admin.template.*') ? 'active' : '' }}">
+                    <i class="fas fa-copy"></i>
+                    <span>PO Templates</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.po-change-orders.index') }}" class="nav-link {{ request()->routeIs('admin.po-change-orders.*') ? 'active' : '' }}">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>PO Change Orders</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.receive.index') }}" class="nav-link {{ request()->routeIs('admin.receive.*') ? 'active' : '' }}">
+                    <i class="fas fa-box-open"></i>
+                    <span>Receive Orders</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.rfq.index') }}" class="nav-link {{ request()->routeIs('admin.rfq.*') ? 'active' : '' }}">
+                    <i class="fas fa-file-contract"></i>
+                    <span>RFQ Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.backorders.index') }}" class="nav-link {{ request()->routeIs('admin.backorders.*') ? 'active' : '' }}">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Backorders</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider my-2 bg-light opacity-25">
+            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">PROJECT MANAGEMENT</div></li>
+
             <li class="nav-item">
                 <a href="{{ route('admin.projects.index') }}" class="nav-link {{ request()->routeIs('admin.projects.*') ? 'active' : '' }}">
                     <i class="fas fa-project-diagram"></i>
                     <span>Projects</span>
                 </a>
             </li>
-            
+            <li class="nav-item">
+                <a href="{{ route('admin.budget.index') }}" class="nav-link {{ request()->routeIs('admin.budget.*', 'admin.budgets.*') ? 'active' : '' }}">
+                    <i class="fas fa-calculator"></i>
+                    <span>Budget Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.takeoffs.index') }}" class="nav-link {{ request()->routeIs('admin.takeoffs.*') ? 'active' : '' }}">
+                    <i class="fas fa-hard-hat"></i>
+                    <span>Takeoffs & Estimates</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.schedule.index') }}" class="nav-link {{ request()->routeIs('admin.schedule.*') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Scheduling</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.costcodes.index') }}" class="nav-link {{ request()->routeIs('admin.costcodes.*') ? 'active' : '' }}">
+                    <i class="fas fa-code"></i>
+                    <span>Cost Codes</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.approvals.dashboard') }}" class="nav-link {{ request()->routeIs('admin.approvals.*') ? 'active' : '' }}">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Approvals</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.approval-workflows.index') }}" class="nav-link {{ request()->routeIs('admin.approval-workflows.*') ? 'active' : '' }}">
+                    <i class="fas fa-sitemap"></i>
+                    <span>Approval Workflows</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.project-roles.index') }}" class="nav-link {{ request()->routeIs('admin.project-roles.*') ? 'active' : '' }}">
+                    <i class="fas fa-user-tag"></i>
+                    <span>Project Roles</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider my-2 bg-light opacity-25">
+            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">SUBCONTRACTOR MANAGEMENT</div></li>
+
+            <li class="nav-item">
+                <a href="{{ route('admin.contracts.index') }}" class="nav-link {{ request()->routeIs('admin.contracts.*') ? 'active' : '' }}">
+                    <i class="fas fa-file-signature"></i>
+                    <span>Contracts</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.contract-change-orders.index') }}" class="nav-link {{ request()->routeIs('admin.contract-change-orders.*') ? 'active' : '' }}">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Contract Change Orders</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.compliance.dashboard') }}" class="nav-link {{ request()->routeIs('admin.compliance.*', 'admin.supplier-compliance.*') ? 'active' : '' }}">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Compliance Tracker</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider my-2 bg-light opacity-25">
+            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">INVENTORY & CATALOG</div></li>
+
+            <li class="nav-item">
+                <a href="{{ route('admin.item.index') }}" class="nav-link {{ request()->routeIs('admin.item.*') ? 'active' : '' }}">
+                    <i class="fas fa-boxes"></i>
+                    <span>Item Management</span>
+                </a>
+            </li>
             <li class="nav-item">
                 <a href="{{ route('admin.suppliers.index') }}" class="nav-link {{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}">
                     <i class="fas fa-truck"></i>
                     <span>Suppliers</span>
                 </a>
             </li>
-            
+            <li class="nav-item">
+                <a href="{{ route('admin.equipment.index') }}" class="nav-link {{ request()->routeIs('admin.equipment.*') ? 'active' : '' }}">
+                    <i class="fas fa-tools"></i>
+                    <span>Equipment</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider my-2 bg-light opacity-25">
+            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">INTEGRATIONS</div></li>
+
+            <li class="nav-item">
+                <a href="{{ route('admin.procore.index') }}" class="nav-link {{ request()->routeIs('admin.procore.*') ? 'active' : '' }}">
+                    <i class="fas fa-plug"></i>
+                    <span>Procore</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.integrations.index') }}" class="nav-link {{ request()->routeIs('admin.integrations.*') ? 'active' : '' }}">
+                    <i class="fas fa-link"></i>
+                    <span>Accounting</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider my-2 bg-light opacity-25">
+            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">REPORTS & SETTINGS</div></li>
+
+            <li class="nav-item">
+                <a href="{{ route('admin.reports.budget-vs-actual') }}" class="nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.checklists.index') }}" class="nav-link {{ request()->routeIs('admin.checklists.*') ? 'active' : '' }}">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Checklists</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.uom.*', 'admin.taxgroups.*', 'admin.packages.*', 'admin.permissions.*', 'admin.company.*', 'admin.security.*', 'admin.ai-settings.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#settingsCollapse" role="button" aria-expanded="{{ request()->routeIs('admin.uom.*', 'admin.taxgroups.*', 'admin.packages.*', 'admin.permissions.*', 'admin.company.*', 'admin.security.*', 'admin.ai-settings.*') ? 'true' : 'false' }}">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <div class="collapse {{ request()->routeIs('admin.uom.*', 'admin.taxgroups.*', 'admin.packages.*', 'admin.permissions.*', 'admin.company.*', 'admin.security.*', 'admin.ai-settings.*') ? 'show' : '' }}" id="settingsCollapse">
+                    <li class="nav-item">
+                        <a href="{{ route('admin.company.index') }}" class="nav-link {{ request()->routeIs('admin.company.*') ? 'active' : '' }}">
+                            <i class="fas fa-building"></i>
+                            <span>Company Profile</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.uom.index') }}" class="nav-link {{ request()->routeIs('admin.uom.*') ? 'active' : '' }}">
+                            <i class="fas fa-ruler"></i>
+                            <span>Units of Measure</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.taxgroups.index') }}" class="nav-link {{ request()->routeIs('admin.taxgroups.*') ? 'active' : '' }}">
+                            <i class="fas fa-percent"></i>
+                            <span>Tax Groups</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.packages.index') }}" class="nav-link {{ request()->routeIs('admin.packages.*') ? 'active' : '' }}">
+                            <i class="fas fa-box"></i>
+                            <span>Item Packages</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.permissions.index') }}" class="nav-link {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Permissions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.security.2fa') }}" class="nav-link {{ request()->routeIs('admin.security.2fa') ? 'active' : '' }}">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Two-Factor Auth</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.security.audit-logs') }}" class="nav-link {{ request()->routeIs('admin.security.audit-logs') ? 'active' : '' }}">
+                            <i class="fas fa-history"></i>
+                            <span>Audit Logs</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.ai-settings.index') }}" class="nav-link {{ request()->routeIs('admin.ai-settings.*') ? 'active' : '' }}">
+                            <i class="fas fa-robot"></i>
+                            <span>AI Settings</span>
+                        </a>
+                    </li>
+                </div>
+            </li>
+
             @if(session('u_type') == 1)
                 <li class="nav-item">
                     <a href="{{ route('admin.companies.index') }}" class="nav-link {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}">
@@ -194,9 +435,15 @@
                     </a>
                 </li>
             @endif
-            
+
             <hr class="sidebar-divider my-2 bg-light opacity-25">
-            
+
+            <li class="nav-item">
+                <a href="{{ route('admin.support.index') }}" class="nav-link {{ request()->routeIs('admin.support.*') ? 'active' : '' }}">
+                    <i class="fas fa-life-ring"></i>
+                    <span>Support</span>
+                </a>
+            </li>
             <li class="nav-item">
                 <a href="{{ route('admin.logout') }}" class="nav-link">
                     <i class="fas fa-sign-out-alt"></i>
@@ -222,17 +469,11 @@
                     <div class="dropdown me-3">
                         <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             <i class="fas fa-building me-1"></i>
-                            @php
-                                $currentCompany = App\Models\Company::find(session('company_id'));
-                            @endphp
                             {{ $currentCompany ? $currentCompany->name : 'No Company' }}
                         </button>
                         <ul class="dropdown-menu">
                             <li><h6 class="dropdown-header">Switch Company</h6></li>
-                            @php
-                                $companies = App\Models\Company::where('status', 1)->orderBy('name')->get();
-                            @endphp
-                            @foreach($companies as $company)
+                            @foreach($switchableCompanies as $company)
                                 <li>
                                     @if($company->id == session('company_id'))
                                         <span class="dropdown-item active">
@@ -263,8 +504,10 @@
                         <i class="fas fa-user-circle fa-lg"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.profile.index') }}"><i class="fas fa-user me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.security.2fa') }}"><i class="fas fa-user-shield me-2"></i>Two-Factor Auth</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.security.audit-logs') }}"><i class="fas fa-history me-2"></i>Audit Logs</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.company.index') }}"><i class="fas fa-cog me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ route('admin.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                     </ul>
@@ -318,11 +561,15 @@
             $('.sidebar').toggleClass('show');
         });
         
-        // Initialize DataTables
+        // Initialize DataTables (skip tables already initialized by page scripts)
         $(document).ready(function() {
-            $('.datatable').DataTable({
-                responsive: true,
-                pageLength: 25
+            $('.datatable').each(function() {
+                if (!$.fn.dataTable.isDataTable(this)) {
+                    $(this).DataTable({
+                        responsive: true,
+                        pageLength: 25
+                    });
+                }
             });
         });
     </script>

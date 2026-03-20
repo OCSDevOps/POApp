@@ -15,15 +15,17 @@ class ReceiveOrder extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'rorder_no',
         'rorder_porder_ms',
+        'rorder_slip_no',
+        'rorder_infoset',
         'rorder_date',
-        'rorder_notes',
+        'rorder_totalitem',
+        'rorder_totalamount',
+        'rorder_createdate',
+        'rorder_createby',
+        'rorder_modifydate',
+        'rorder_modifyby',
         'rorder_status',
-        'rorder_created_by',
-        'rorder_created_at',
-        'rorder_modified_by',
-        'rorder_modified_at',
         'company_id',
     ];
 
@@ -40,7 +42,7 @@ class ReceiveOrder extends Model
      */
     public function items()
     {
-        return $this->hasMany(ReceiveOrderItem::class, 'rorder_item_rorder_ms', 'rorder_id');
+        return $this->hasMany(ReceiveOrderItem::class, 'ro_detail_rorder_ms', 'rorder_id');
     }
 
     /**

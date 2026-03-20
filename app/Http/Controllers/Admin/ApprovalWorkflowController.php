@@ -20,15 +20,15 @@ class ApprovalWorkflowController extends Controller
 
         // Filter by type
         if ($request->filled('type')) {
-            $query->where('aw_type', $request->type);
+            $query->where('workflow_type', $request->type);
         }
 
         // Filter by project
         if ($request->filled('project_id')) {
-            $query->where('aw_project_id', $request->project_id);
+            $query->where('project_id', $request->project_id);
         }
 
-        $workflows = $query->orderBy('aw_type')->orderBy('aw_threshold_from')->get();
+        $workflows = $query->orderBy('workflow_type')->orderBy('amount_threshold_min')->get();
 
         $projects = Project::active()->orderByName()->get();
 
@@ -41,7 +41,7 @@ class ApprovalWorkflowController extends Controller
     public function create()
     {
         $projects = Project::active()->orderByName()->get();
-        $users = User::where('u_type', 1)->orderBy('u_name', 'ASC')->get();
+        $users = User::where('u_type', 1)->orderBy('name', 'ASC')->get();
 
         return view('admin.approval-workflows.create', compact('projects', 'users'));
     }
@@ -52,17 +52,17 @@ class ApprovalWorkflowController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:budget_change_order,po_change_order,purchase_order',
+            'type' => 'required|in:budget_change_order,po_change_order,purchase_order,contract_co',
             'project_id' => 'nullable|exists:project_master,proj_id',
             'threshold_from' => 'required|numeric|min:0',
             'threshold_to' => 'nullable|numeric|min:0',
             'approval_type' => 'required|in:role_based,user_based',
-            
+
             // For user-based
-            'approver_user_1' => 'required_if:approval_type,user_based|nullable|exists:user_master,u_id',
-            'approver_user_2' => 'nullable|exists:user_master,u_id',
-            'approver_user_3' => 'nullable|exists:user_master,u_id',
-            
+            'approver_user_1' => 'required_if:approval_type,user_based|nullable|exists:users,id',
+            'approver_user_2' => 'nullable|exists:users,id',
+            'approver_user_3' => 'nullable|exists:users,id',
+
             // For role-based
             'approver_roles' => 'required_if:approval_type,role_based|nullable|array',
             'approver_roles.*' => 'in:staff,project_manager,manager,director,finance,executive,admin',
@@ -83,18 +83,14 @@ class ApprovalWorkflowController extends Controller
             }
 
             ApprovalWorkflow::create([
-                'aw_type' => $request->type,
-                'aw_project_id' => $request->project_id,
-                'aw_threshold_from' => $request->threshold_from,
-                'aw_threshold_to' => $request->threshold_to,
-                'aw_approver_user_1' => $approverUser1,
-                'aw_approver_user_2' => $approverUser2,
-                'aw_approver_user_3' => $approverUser3,
-                'aw_approver_roles' => $approverRoles,
-                'aw_require_all' => $request->require_all ?? false,
-                'aw_status' => 1,
-                'aw_created_at' => now(),
-                'aw_created_by' => auth()->id(),
+                'workflow_type' => $request->type,
+                'project_id' => $request->project_id,
+                'amount_threshold_min' => $request->threshold_from,
+                'amount_threshold_max' => $request->threshold_to,
+                'approver_user_ids' => $approverUser1 ? json_encode(array_filter([$approverUser1, $approverUser2, $approverUser3])) : null,
+                'approver_roles' => $approverRoles,
+                'approval_logic' => ($request->require_all ?? false) ? 'all' : 'any',
+                'is_active' => true,
             ]);
 
             return redirect()->route('admin.approval-workflows.index')
@@ -113,7 +109,7 @@ class ApprovalWorkflowController extends Controller
     {
         $workflow = ApprovalWorkflow::findOrFail($id);
         $projects = Project::active()->orderByName()->get();
-        $users = User::where('u_type', 1)->orderBy('u_name', 'ASC')->get();
+        $users = User::where('u_type', 1)->orderBy('name', 'ASC')->get();
 
         return view('admin.approval-workflows.edit', compact('workflow', 'projects', 'users'));
     }
@@ -124,14 +120,14 @@ class ApprovalWorkflowController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'type' => 'required|in:budget_change_order,po_change_order,purchase_order',
+            'type' => 'required|in:budget_change_order,po_change_order,purchase_order,contract_co',
             'project_id' => 'nullable|exists:project_master,proj_id',
             'threshold_from' => 'required|numeric|min:0',
             'threshold_to' => 'nullable|numeric|min:0',
             'approval_type' => 'required|in:role_based,user_based',
-            'approver_user_1' => 'required_if:approval_type,user_based|nullable|exists:user_master,u_id',
-            'approver_user_2' => 'nullable|exists:user_master,u_id',
-            'approver_user_3' => 'nullable|exists:user_master,u_id',
+            'approver_user_1' => 'required_if:approval_type,user_based|nullable|exists:users,id',
+            'approver_user_2' => 'nullable|exists:users,id',
+            'approver_user_3' => 'nullable|exists:users,id',
             'approver_roles' => 'required_if:approval_type,role_based|nullable|array',
         ]);
 
@@ -152,17 +148,13 @@ class ApprovalWorkflowController extends Controller
             }
 
             $workflow->update([
-                'aw_type' => $request->type,
-                'aw_project_id' => $request->project_id,
-                'aw_threshold_from' => $request->threshold_from,
-                'aw_threshold_to' => $request->threshold_to,
-                'aw_approver_user_1' => $approverUser1,
-                'aw_approver_user_2' => $approverUser2,
-                'aw_approver_user_3' => $approverUser3,
-                'aw_approver_roles' => $approverRoles,
-                'aw_require_all' => $request->require_all ?? false,
-                'aw_updated_at' => now(),
-                'aw_updated_by' => auth()->id(),
+                'workflow_type' => $request->type,
+                'project_id' => $request->project_id,
+                'amount_threshold_min' => $request->threshold_from,
+                'amount_threshold_max' => $request->threshold_to,
+                'approver_user_ids' => $approverUser1 ? json_encode(array_filter([$approverUser1, $approverUser2, $approverUser3])) : null,
+                'approver_roles' => $approverRoles,
+                'approval_logic' => ($request->require_all ?? false) ? 'all' : 'any',
             ]);
 
             return redirect()->route('admin.approval-workflows.index')
@@ -183,12 +175,10 @@ class ApprovalWorkflowController extends Controller
             $workflow = ApprovalWorkflow::findOrFail($id);
             
             $workflow->update([
-                'aw_status' => $workflow->aw_status ? 0 : 1,
-                'aw_updated_at' => now(),
-                'aw_updated_by' => auth()->id(),
+                'is_active' => !$workflow->is_active,
             ]);
 
-            $status = $workflow->aw_status ? 'activated' : 'deactivated';
+            $status = $workflow->is_active ? 'activated' : 'deactivated';
             return back()->with('success', "Workflow {$status} successfully.");
 
         } catch (\Exception $e) {

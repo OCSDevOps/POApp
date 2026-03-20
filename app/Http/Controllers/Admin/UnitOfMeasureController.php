@@ -72,8 +72,7 @@ class UnitOfMeasureController extends Controller
                 ->where('item_unit_ms', $uom->uom_id)
                 ->where('company_id', $companyId)
                 ->exists()
-            || DB::table('purchase_order_items')
-                ->where('porder_item_uom', $uom->uom_id)
+            || DB::table('purchase_order_details')
                 ->where('company_id', $companyId)
                 ->exists();
 

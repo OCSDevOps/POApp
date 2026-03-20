@@ -91,7 +91,6 @@ class RfqController extends Controller
                     'title' => $request->title,
                     'description' => $request->description,
                     'due_date' => $request->due_date,
-                    'company_id' => session('company_id'),
                 ],
                 $request->items,
                 $request->supplier_ids

@@ -17,7 +17,6 @@ class IntegrationSyncLog extends Model
     protected $fillable = [
         'integration_id',
         'company_id',
-        'sync_type',
         'operation',
         'status',
         'entity_type',

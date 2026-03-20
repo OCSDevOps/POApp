@@ -24,6 +24,11 @@ class User extends Authenticatable
         'email',
         'password',
         'company_id',
+        'two_factor_enabled',
+        'two_factor_secret',
+        'two_factor_confirmed_at',
+        'last_login_at',
+        'last_login_ip',
     ];
 
     /**
@@ -34,6 +39,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
     ];
 
     /**
@@ -44,6 +50,9 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'company_id' => 'integer',
+        'two_factor_enabled' => 'boolean',
+        'two_factor_confirmed_at' => 'datetime',
+        'last_login_at' => 'datetime',
     ];
 
     /**
@@ -52,5 +61,13 @@ class User extends Authenticatable
     public function company()
     {
         return $this->belongsTo(Company::class, 'company_id', 'id');
+    }
+
+    /**
+     * Determine whether two-factor auth is enabled.
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return (bool) $this->two_factor_enabled && !empty($this->two_factor_secret);
     }
 }

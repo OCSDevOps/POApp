@@ -9,9 +9,9 @@
         <h1 class="h3 mb-0 text-gray-800">
             <i class="fas fa-building"></i> {{ $company->name }}
             @if($company->status == 1)
-                <span class="badge badge-success">Active</span>
+                <span class="badge bg-success">Active</span>
             @else
-                <span class="badge badge-secondary">Inactive</span>
+                <span class="badge bg-secondary">Inactive</span>
             @endif
         </h1>
         <div>
@@ -23,7 +23,7 @@
                     </button>
                 </form>
             @else
-                <span class="badge badge-success p-2"><i class="fas fa-check"></i> Current Company</span>
+                <span class="badge bg-success p-2"><i class="fas fa-check"></i> Current Company</span>
             @endif
             <a href="{{ route('admin.companies.edit', $company) }}" class="btn btn-warning">
                 <i class="fas fa-edit"></i> Edit
@@ -37,9 +37,7 @@
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
-            <button type="button" class="close" data-dismiss="alert">
-                <span>&times;</span>
-            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
@@ -49,7 +47,7 @@
             <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
+                        <div class="col me-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Users</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['total_users'] }}</div>
                         </div>
@@ -65,7 +63,7 @@
             <div class="card border-left-success shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
+                        <div class="col me-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Projects</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 {{ $stats['active_projects'] }} / {{ $stats['total_projects'] }}
@@ -84,7 +82,7 @@
             <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
+                        <div class="col me-2">
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Purchase Orders</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 {{ $stats['pending_pos'] }} / {{ $stats['total_pos'] }}
@@ -103,7 +101,7 @@
             <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
+                        <div class="col me-2">
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Suppliers</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['total_suppliers'] }}</div>
                         </div>
@@ -142,9 +140,9 @@
                                 <th>Status:</th>
                                 <td>
                                     @if($company->status == 1)
-                                        <span class="badge badge-success">Active</span>
+                                        <span class="badge bg-success">Active</span>
                                     @else
-                                        <span class="badge badge-secondary">Inactive</span>
+                                        <span class="badge bg-secondary">Inactive</span>
                                     @endif
                                 </td>
                             </tr>
@@ -190,11 +188,11 @@
                                             <td>{{ $po->porder_no }}</td>
                                             <td>{{ $po->project->proj_name ?? '-' }}</td>
                                             <td>
-                                                <span class="badge badge-{{ $po->porder_general_status == 'pending' ? 'warning' : 'success' }}">
-                                                    {{ ucfirst($po->porder_general_status) }}
+                                                <span class="badge bg-{{ $po->porder_status == 1 ? 'success' : 'secondary' }}">
+                                                    {{ $po->porder_status == 1 ? 'Active' : 'Inactive' }}
                                                 </span>
                                             </td>
-                                            <td>{{ \Carbon\Carbon::parse($po->porder_date)->format('M d, Y') }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($po->porder_createdate)->format('M d, Y') }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>

@@ -3,18 +3,29 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateBudgetVsActualExportJob;
+use App\Models\ReportExport;
+use App\Services\Cache\ReferenceDataCacheService;
 use App\Services\ReportExportService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 
 class BudgetReportController extends Controller
 {
     protected $exportService;
+    protected $referenceDataCacheService;
     
-    public function __construct(ReportExportService $exportService)
+    public function __construct(
+        ReportExportService $exportService,
+        ReferenceDataCacheService $referenceDataCacheService
+    )
     {
         $this->exportService = $exportService;
+        $this->referenceDataCacheService = $referenceDataCacheService;
     }
     /**
      * Display budget vs actual report with project selection
@@ -22,25 +33,42 @@ class BudgetReportController extends Controller
     public function index(Request $request)
     {
         // Get all projects for the current company
-        $companyId = Session::get('company_id', 1);
-        
-        $projects = DB::table('project_master')
-            ->where('proj_company_id', $companyId)
-            ->where('proj_status', 1)
-            ->select('proj_id', 'proj_name', 'proj_no')
-            ->orderBy('proj_name')
-            ->get();
-        
-        $selectedProjectId = $request->get('project_id');
+        $companyId = (int) Session::get('company_id', 1);
+
+        $projects = $this->referenceDataCacheService->getReportProjects($companyId);
+
+        $selectedProjectId = (int) $request->get('project_id');
+        if ($selectedProjectId <= 0) {
+            $selectedProjectId = null;
+        }
+
         $reportData = null;
         $summary = null;
-        
+        $recentExports = collect();
+
         if ($selectedProjectId) {
             $reportData = $this->getBudgetVsActualData($selectedProjectId);
             $summary = $this->calculateSummary($reportData);
+
+            $recentExports = ReportExport::where('company_id', $companyId)
+                ->where('report_type', 'budget_vs_actual')
+                ->orderByDesc('report_export_id')
+                ->limit(25)
+                ->get()
+                ->filter(function (ReportExport $export) use ($selectedProjectId) {
+                    return (int) ($export->parameters_decoded['project_id'] ?? 0) === (int) $selectedProjectId;
+                })
+                ->take(10)
+                ->values();
         }
-        
-        return view('admin.reports.budget-vs-actual', compact('projects', 'selectedProjectId', 'reportData', 'summary'));
+
+        return view('admin.reports.budget-vs-actual', compact(
+            'projects',
+            'selectedProjectId',
+            'reportData',
+            'summary',
+            'recentExports'
+        ));
     }
     
     /**
@@ -48,13 +76,17 @@ class BudgetReportController extends Controller
      */
     private function getBudgetVsActualData($projectId)
     {
+        $companyId = (int) Session::get('company_id', 1);
+
         return DB::table('budget_master as b')
             ->join('cost_code_master as cc', 'b.budget_cost_code_id', '=', 'cc.cc_id')
             ->where('b.budget_project_id', $projectId)
+            ->where('b.company_id', $companyId)
+            ->where('cc.company_id', $companyId)
             ->select(
                 'cc.cc_id',
                 'cc.cc_no as cost_code',
-                'cc.cc_name as cost_code_name',
+                'cc.cc_description as cost_code_name',
                 'cc.parent_code',
                 'cc.level',
                 'b.budget_original_amount as original',
@@ -133,12 +165,12 @@ class BudgetReportController extends Controller
             ->select(
                 'pom.porder_id',
                 'pom.porder_no',
-                'pom.porder_date',
+                'pom.porder_createdate',
                 DB::raw('SUM(pod.po_detail_unitprice * pod.po_detail_quantity) as po_amount'),
-                'pom.porder_general_status as porder_status'
+                'pom.porder_status'
             )
-            ->groupBy('pom.porder_id', 'pom.porder_no', 'pom.porder_date', 'pom.porder_general_status')
-            ->orderBy('pom.porder_date', 'desc')
+            ->groupBy('pom.porder_id', 'pom.porder_no', 'pom.porder_createdate', 'pom.porder_status')
+            ->orderBy('pom.porder_createdate', 'desc')
             ->get();
         
         // Get all receive orders for this cost code (company-scoped)
@@ -170,7 +202,7 @@ class BudgetReportController extends Controller
         $companyId = Session::get('company_id', 1);
         
         $projects = DB::table('project_master')
-            ->where('proj_company_id', $companyId)
+            ->where('company_id', $companyId)
             ->where('proj_status', 1)
             ->select('proj_id', 'proj_name')
             ->get();
@@ -192,7 +224,7 @@ class BudgetReportController extends Controller
                 ->where('b.budget_project_id', $selectedProjectId)
                 ->select(
                     'cc.cc_no',
-                    'cc.cc_name',
+                    'cc.cc_description',
                     'b.budget_revised_amount',
                     'b.committed',
                     'b.actual',
@@ -230,7 +262,7 @@ class BudgetReportController extends Controller
                 })
                 ->select(
                     'cc.cc_no',
-                    'cc.cc_name',
+                    'cc.cc_description',
                     'b.budget_revised_amount',
                     'b.committed',
                     'b.actual',
@@ -251,6 +283,95 @@ class BudgetReportController extends Controller
             'alertsData'
         ));
     }
+
+    /**
+     * Queue asynchronous budget report export.
+     */
+    public function queueExport(Request $request)
+    {
+        $validated = $request->validate([
+            'project_id' => 'required|integer|min:1',
+            'format' => 'nullable|in:csv',
+        ]);
+
+        $companyId = (int) Session::get('company_id', 1);
+        $projectId = (int) $validated['project_id'];
+
+        $project = DB::table('project_master')
+            ->where('proj_id', $projectId)
+            ->where('company_id', $companyId)
+            ->select('proj_id')
+            ->first();
+
+        if (!$project) {
+            return redirect()->route('admin.reports.budget-vs-actual', ['project_id' => $projectId])
+                ->with('error', 'Project not found.');
+        }
+
+        $reportExport = ReportExport::create([
+            'company_id' => $companyId,
+            'user_id' => Auth::id(),
+            'report_type' => 'budget_vs_actual',
+            'export_format' => $validated['format'] ?? 'csv',
+            'status' => 'pending',
+            'parameters' => json_encode([
+                'project_id' => $projectId,
+            ], JSON_UNESCAPED_SLASHES),
+            'queued_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        try {
+            GenerateBudgetVsActualExportJob::dispatch((int) $reportExport->report_export_id);
+
+            return redirect()->route('admin.reports.budget-vs-actual', ['project_id' => $projectId])
+                ->with('success', 'Report export queued successfully. Export ID #' . $reportExport->report_export_id);
+        } catch (\Throwable $e) {
+            Log::warning('Report export queue dispatch failed, running export synchronously', [
+                'report_export_id' => $reportExport->report_export_id,
+                'project_id' => $projectId,
+                'error' => $e->getMessage(),
+            ]);
+
+            (new GenerateBudgetVsActualExportJob((int) $reportExport->report_export_id))->handle();
+            $reportExport->refresh();
+
+            if ($reportExport->status === 'completed') {
+                return redirect()->route('admin.reports.budget-vs-actual', ['project_id' => $projectId])
+                    ->with('success', 'Redis was unavailable. Export generated immediately (ID #' . $reportExport->report_export_id . ').');
+            }
+
+            return redirect()->route('admin.reports.budget-vs-actual', ['project_id' => $projectId])
+                ->with('error', 'Export could not be queued or generated. Please check logs.');
+        }
+    }
+
+    /**
+     * Download previously generated queued export.
+     */
+    public function downloadQueuedExport($exportId)
+    {
+        $companyId = (int) Session::get('company_id', 1);
+
+        $reportExport = ReportExport::where('report_export_id', $exportId)
+            ->where('company_id', $companyId)
+            ->where('report_type', 'budget_vs_actual')
+            ->firstOrFail();
+
+        if ($reportExport->status !== 'completed') {
+            return back()->with('error', 'This export is not ready yet.');
+        }
+
+        if (empty($reportExport->file_path) || !Storage::disk('local')->exists($reportExport->file_path)) {
+            return back()->with('error', 'Export file is missing from storage.');
+        }
+
+        return Storage::disk('local')->download(
+            $reportExport->file_path,
+            $reportExport->file_name ?: basename($reportExport->file_path)
+        );
+    }
     
     /**
      * Export budget vs actual report to CSV/Excel
@@ -269,8 +390,8 @@ class BudgetReportController extends Controller
         // Get project info (company-scoped)
         $project = DB::table('project_master')
             ->where('proj_id', $projectId)
-            ->where('proj_company_id', $companyId)
-            ->select('proj_name', 'proj_no')
+            ->where('company_id', $companyId)
+            ->select('proj_name', 'proj_number')
             ->first();
         
         if (!$project) {
@@ -283,7 +404,7 @@ class BudgetReportController extends Controller
         $summary = $this->calculateSummary($reportData);
         
         // Generate filename
-        $filename = 'budget_report_' . str_replace(' ', '_', $project->proj_no) . '_' . now()->format('Y-m-d') . '.csv';
+        $filename = 'budget_report_' . str_replace(' ', '_', $project->proj_number) . '_' . now()->format('Y-m-d') . '.csv';
         
         // Generate CSV content
         ob_start();
@@ -294,7 +415,7 @@ class BudgetReportController extends Controller
         
         // Project info header
         fputcsv($output, ['Budget vs Actual Report']);
-        fputcsv($output, ['Project:', $project->proj_name . ' (' . $project->proj_no . ')']);
+        fputcsv($output, ['Project:', $project->proj_name . ' (' . $project->proj_number . ')']);
         fputcsv($output, ['Generated:', now()->format('Y-m-d H:i:s')]);
         fputcsv($output, []); // Empty row
         

@@ -64,7 +64,7 @@ trait CompanyScope
      */
     public function company()
     {
-        return $this->belongsTo(\App\Models\Company::class, 'company_id', 'company_id');
+        return $this->belongsTo(\App\Models\Company::class, 'company_id', 'id');
     }
 
     /**

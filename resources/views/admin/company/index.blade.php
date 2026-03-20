@@ -8,6 +8,7 @@
         <h4 class="mb-3">Company Profile</h4>
         <div class="card mb-4">
             <div class="card-body">
+                @include('partials.validation-errors')
                 <form method="POST" action="{{ route('admin.company.update') }}" enctype="multipart/form-data">
                     @csrf
                     <div class="row g-3">

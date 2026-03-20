@@ -1,5 +1,5 @@
 {{-- extended main app layout for basic structure --}}
-@extends('layouts/auth')
+@extends('layouts.auth')
 
 {{-- content of login page starts --}}
 @section('content')
@@ -59,31 +59,34 @@
                         </div>
                         <div class="mb-3">
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="checkbox-signin">
+                                <input type="checkbox" class="form-check-input" id="checkbox-signin" name="remember" value="1">
                                 <label class="form-check-label" for="checkbox-signin">Remember me</label>
                             </div>
                         </div>
                         <div class="d-grid mb-0 text-center">
                             <button class="btn btn-primary" type="submit"><i class="mdi mdi-login"></i> Log In </button>
                         </div>
-                        <!-- social-->
-                        {{-- <div class="text-center mt-4">
-                            <p class="text-muted font-16">Sign in with</p>
-                            <ul class="social-list list-inline mt-3">
-                                <li class="list-inline-item">
-                                    <a href="javascript: void(0);" class="social-list-item border-primary text-primary"><i class="mdi mdi-facebook"></i></a>
-                                </li>
-                                <li class="list-inline-item">
-                                    <a href="javascript: void(0);" class="social-list-item border-danger text-danger"><i class="mdi mdi-google"></i></a>
-                                </li>
-                                <li class="list-inline-item">
-                                    <a href="javascript: void(0);" class="social-list-item border-info text-info"><i class="mdi mdi-twitter"></i></a>
-                                </li>
-                                <li class="list-inline-item">
-                                    <a href="javascript: void(0);" class="social-list-item border-secondary text-secondary"><i class="mdi mdi-github"></i></a>
-                                </li>
-                            </ul>
-                        </div> --}}
+
+                        @if(config('app.debug'))
+                        <!-- Demo Login Buttons (only visible in debug mode) -->
+                        <div class="mt-3">
+                            <p class="text-muted text-center mb-2"><small>Quick Demo Login</small></p>
+                            <div class="d-grid gap-1">
+                                <button type="button" class="btn btn-outline-success btn-sm demo-login-btn"
+                                    data-email="superadmin@demo.com" data-password="admin123">
+                                    <i class="mdi mdi-shield-account"></i> Super Admin
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm demo-login-btn"
+                                    data-email="admin@demo.com" data-password="admin123">
+                                    <i class="mdi mdi-account-cog"></i> Company Admin
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm demo-login-btn"
+                                    data-email="manager@demo.com" data-password="admin123">
+                                    <i class="mdi mdi-account-tie"></i> Project Manager
+                                </button>
+                            </div>
+                        </div>
+                        @endif
                     </form>
                     <!-- end form-->
 
@@ -112,5 +115,23 @@
     </div>
     <!-- end auth-fluid-->
 
+@endsection
+
+@section('js')
+<script>
+document.querySelectorAll('.demo-login-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var form = this.closest('form');
+        var emailEl = form.querySelector('[name="email"]');
+        var passEl = form.querySelector('[name="password"]');
+        emailEl.value = this.dataset.email;
+        passEl.value = this.dataset.password;
+        // Remove required so native validation doesn't block programmatic submit
+        emailEl.removeAttribute('required');
+        passEl.removeAttribute('required');
+        form.submit();
+    });
+});
+</script>
 @endsection
 {{-- content of login page ends --}}

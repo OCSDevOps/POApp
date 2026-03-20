@@ -6,11 +6,18 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Session;
 use App\Models\Project;
+use App\Services\Cache\ReferenceDataCacheService;
 
 class ProjectController extends Controller
 {
+    protected $referenceDataCacheService;
+
+    public function __construct(ReferenceDataCacheService $referenceDataCacheService)
+    {
+        $this->referenceDataCacheService = $referenceDataCacheService;
+    }
+
     /**
      * Display a listing of projects.
      */
@@ -35,25 +42,23 @@ class ProjectController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'proj_name' => 'required|string|max:255',
-            'proj_code' => 'required|string|max:50|unique:project_master,proj_code',
+            'proj_name' => 'required|string|max:250',
+            'proj_number' => 'required|string|max:50|unique:project_master,proj_number',
+            'proj_address' => 'required|string',
         ]);
 
         Project::create([
+            'proj_number' => $request->proj_number,
             'proj_name' => $request->proj_name,
-            'proj_code' => $request->proj_code,
             'proj_address' => $request->proj_address,
-            'proj_city' => $request->proj_city,
-            'proj_state' => $request->proj_state,
-            'proj_zip' => $request->proj_zip,
-            'proj_country' => $request->proj_country,
-            'proj_start_date' => $request->proj_start_date,
-            'proj_end_date' => $request->proj_end_date,
+            'proj_description' => $request->proj_description,
+            'proj_contact' => $request->proj_contact ?? 0,
             'proj_status' => 1,
-            'proj_created_by' => Auth::id(),
-            'proj_created_at' => now(),
+            'proj_createby' => Auth::id(),
+            'proj_createdate' => now(),
             'company_id' => session('company_id'),
         ]);
+        $this->referenceDataCacheService->clearCompanyReferenceCaches((int) session('company_id'));
 
         return redirect()->route('admin.projects.index')
             ->with('success', 'Project created successfully.');
@@ -89,27 +94,25 @@ class ProjectController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'proj_name' => 'required|string|max:255',
-            'proj_code' => 'required|string|max:50|unique:project_master,proj_code,' . $id . ',proj_id',
+            'proj_name' => 'required|string|max:250',
+            'proj_number' => 'required|string|max:50|unique:project_master,proj_number,' . $id . ',proj_id',
+            'proj_address' => 'required|string',
         ]);
 
         $project = Project::findOrFail($id);
-        
+
         abort_unless($project->company_id === session('company_id'), 403);
 
         $project->update([
+            'proj_number' => $request->proj_number,
             'proj_name' => $request->proj_name,
-            'proj_code' => $request->proj_code,
             'proj_address' => $request->proj_address,
-            'proj_city' => $request->proj_city,
-            'proj_state' => $request->proj_state,
-            'proj_zip' => $request->proj_zip,
-            'proj_country' => $request->proj_country,
-            'proj_start_date' => $request->proj_start_date,
-            'proj_end_date' => $request->proj_end_date,
-            'proj_modified_by' => Auth::id(),
-            'proj_modified_at' => now(),
+            'proj_description' => $request->proj_description,
+            'proj_contact' => $request->proj_contact ?? 0,
+            'proj_modifyby' => Auth::id(),
+            'proj_modifydate' => now(),
         ]);
+        $this->referenceDataCacheService->clearCompanyReferenceCaches((int) session('company_id'));
 
         return redirect()->route('admin.projects.index')
             ->with('success', 'Project updated successfully.');
@@ -124,9 +127,10 @@ class ProjectController extends Controller
         
         $project->update([
             'proj_status' => $request->status,
-            'proj_modified_by' => Auth::id(),
-            'proj_modified_at' => now(),
+            'proj_modifyby' => Auth::id(),
+            'proj_modifydate' => now(),
         ]);
+        $this->referenceDataCacheService->clearCompanyReferenceCaches((int) session('company_id'));
 
         return response()->json(['success' => true, 'message' => 'Status updated successfully']);
     }
@@ -151,6 +155,7 @@ class ProjectController extends Controller
         }
 
         $project->delete();
+        $this->referenceDataCacheService->clearCompanyReferenceCaches((int) session('company_id'));
 
         return redirect()->route('admin.projects.index')
             ->with('success', 'Project deleted successfully.');

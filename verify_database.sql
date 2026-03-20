@@ -57,19 +57,19 @@ ELSE
 PRINT '';
 
 -- Phase 1.5: Backorder Fields
-PRINT 'Phase 1.5: Backorder Fields in purchase_order_items';
+PRINT 'Phase 1.5: Backorder Fields in purchase_order_details';
 PRINT '-----------------------------------------------------';
-IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('purchase_order_items') AND name = 'backorder_qty')
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('purchase_order_details') AND name = 'backorder_qty')
     PRINT '✓ backorder_qty column EXISTS'
 ELSE
     PRINT '✗ backorder_qty column NOT FOUND';
 
-IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('purchase_order_items') AND name = 'backorder_status')
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('purchase_order_details') AND name = 'backorder_status')
     PRINT '✓ backorder_status column EXISTS'
 ELSE
     PRINT '✗ backorder_status column NOT FOUND';
 
-IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('purchase_order_items') AND name = 'backorder_notes')
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('purchase_order_details') AND name = 'backorder_notes')
     PRINT '✓ backorder_notes column EXISTS'
 ELSE
     PRINT '✗ backorder_notes column NOT FOUND';

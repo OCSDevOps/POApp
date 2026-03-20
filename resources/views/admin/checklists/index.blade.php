@@ -34,11 +34,10 @@
                         <td>{!! $checklist->status ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>' !!}</td>
                         <td class="text-end">
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.checklists.edit', $checklist) }}"><i class="fa fa-pen"></i></a>
-                            <form method="POST" action="{{ route('admin.checklists.destroy', $checklist) }}" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete checklist?')"><i class="fa fa-trash"></i></button>
-                            </form>
+                            <button type="button" class="btn btn-sm btn-outline-danger delete-btn"
+                                    data-url="{{ route('admin.checklists.destroy', $checklist) }}" data-name="{{ $checklist->cl_name }}">
+                                <i class="fa fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 @empty
@@ -51,4 +50,5 @@
         </div>
     </div>
 </div>
+@include('partials.delete-modal')
 @endsection

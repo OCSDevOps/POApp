@@ -10,7 +10,7 @@
                 <div>
                     <h1 class="h3 mb-1"><i class="fas fa-users-cog"></i> Project Role Assignments</h1>
                     <p class="text-muted mb-0">
-                        <strong>Project:</strong> {{ $project->proj_name }} ({{ $project->proj_code }})
+                        <strong>Project:</strong> {{ $project->proj_name }} ({{ $project->proj_number }})
                     </p>
                 </div>
                 <a href="{{ route('admin.project-roles.index') }}" class="btn btn-outline-secondary">
@@ -51,7 +51,7 @@
                             <select name="user_id" id="user_id" class="form-select" required>
                                 <option value="">Select user...</option>
                                 @foreach($users as $user)
-                                    <option value="{{ $user->u_id }}">{{ $user->u_name }}</option>
+                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -175,8 +175,8 @@
                                                 @foreach($roles[$roleType] as $assignment)
                                                     <tr>
                                                         <td>
-                                                            <strong>{{ $assignment->user->u_name }}</strong><br>
-                                                            <small class="text-muted">{{ $assignment->user->u_email }}</small>
+                                                            <strong>{{ $assignment->user->name }}</strong><br>
+                                                            <small class="text-muted">{{ $assignment->user->email }}</small>
                                                         </td>
                                                         <td>
                                                             @if($assignment->pr_can_approve)
@@ -274,7 +274,7 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
 $(document).ready(function() {
     // Toggle approval limit field
@@ -306,4 +306,4 @@ function editRole(id, canApprove, approvalLimit) {
     modal.show();
 }
 </script>
-@endsection
+@endpush

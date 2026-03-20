@@ -24,7 +24,16 @@ use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\ItemPackageController;
 use App\Http\Controllers\Admin\ChecklistController;
 use App\Http\Controllers\Admin\PerformChecklistController;
+use App\Http\Controllers\Admin\SecurityController;
 use App\Http\Controllers\Admin\SupportController;
+use App\Http\Controllers\Admin\AttachmentController;
+use App\Http\Controllers\Admin\TakeoffController;
+use App\Http\Controllers\Admin\AiSettingsController;
+use App\Http\Controllers\Admin\ScheduleController;
+use App\Http\Controllers\Admin\ContractController;
+use App\Http\Controllers\Admin\ContractChangeOrderController;
+use App\Http\Controllers\Admin\ContractInvoiceController;
+use App\Http\Controllers\Admin\SupplierComplianceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,6 +50,8 @@ use App\Http\Controllers\Admin\SupportController;
 Route::controller(AuthController::class)->group(function(){
     Route::get('/','index')->name('login');
     Route::post('validate_login','validate_login')->name('auth.validatelogin');
+    Route::get('two-factor-challenge', 'showTwoFactorChallenge')->name('auth.2fa.challenge');
+    Route::post('two-factor-challenge', 'verifyTwoFactorChallenge')->name('auth.2fa.verify');
     Route::get('generate_hash','generate_hash')->name('auth.generatehash');
     Route::get('logout','logout')->name('auth.logout');
 });
@@ -51,13 +62,14 @@ Route::controller(ReportsController::class)->group(function(){
     Route::post('ccsummary','getCcSummary')->name('ccsummary');
 });
 
-// Dashboard Routes (Legacy)
-Route::controller(DashboardController::class)->group(function(){
-    Route::get('dashboard','index')->name('dashboard');
-    Route::get('dashboard-analytics','dashboard_analytics')->name('dashboard.analytics');
-    Route::get('dashboard-ecommerce','dashboard_ecommerce')->name('dashboard.ecommerce');
-    Route::get('dashboard-projects','dashboard_projects')->name('dashboard.projects');
-});
+// Dashboard Routes (Legacy - DISABLED to prevent theme confusion)
+// These routes used the old HYPER theme. Use admin.dashboard instead.
+// Route::controller(DashboardController::class)->group(function(){
+//     Route::get('dashboard','index')->name('dashboard');
+//     Route::get('dashboard-analytics','dashboard_analytics')->name('dashboard.analytics');
+//     Route::get('dashboard-ecommerce','dashboard_ecommerce')->name('dashboard.ecommerce');
+//     Route::get('dashboard-projects','dashboard_projects')->name('dashboard.projects');
+// });
 
 // Admin Routes (Protected by auth middleware)
 Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(function () {
@@ -91,6 +103,8 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::delete('/delete/{id}', [PurchaseOrderController::class, 'destroy'])->name('destroy');
         Route::post('/update-status/{id}', [PurchaseOrderController::class, 'updateStatus'])->name('updatestatus');
         Route::get('/pdf/{id}', [PurchaseOrderController::class, 'generatePdf'])->name('pdf');
+        Route::get('/view/{id}/attachments/{attachmentId}/download', [PurchaseOrderController::class, 'downloadAttachment'])
+            ->name('attachments.download');
         
         // AJAX Routes
         Route::post('/get-item-master-list', [PurchaseOrderController::class, 'getItemMasterList'])->name('itemlist');
@@ -323,6 +337,13 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
     // Support
     Route::get('support', [SupportController::class, 'index'])->name('support.index');
 
+    // User Profile
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ProfileController::class, 'index'])->name('index');
+        Route::put('/', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('update');
+        Route::put('/password', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePassword'])->name('password');
+    });
+
     // Company Settings
     Route::prefix('company')->name('company.')->group(function () {
         Route::get('/', [CompanyController::class, 'index'])->name('index');
@@ -340,6 +361,8 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         Route::put('/{id}', [\App\Http\Controllers\Admin\TenantManagementController::class, 'update'])->name('update');
         Route::delete('/{id}', [\App\Http\Controllers\Admin\TenantManagementController::class, 'destroy'])->name('destroy');
         Route::get('/switch/{id}', [\App\Http\Controllers\Admin\TenantManagementController::class, 'switch'])->name('switch');
+        Route::get('/{id}/settings', [\App\Http\Controllers\Admin\TenantManagementController::class, 'settings'])->name('settings');
+        Route::post('/{id}/settings', [\App\Http\Controllers\Admin\TenantManagementController::class, 'updateSettings'])->name('update-settings');
     });
 
     // Item Packages
@@ -401,14 +424,15 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
     // Approvals Dashboard
     Route::prefix('approvals')->name('approvals.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ApprovalController::class, 'dashboard'])->name('dashboard');
+
+        // Static routes MUST come before {id} wildcard
+        Route::get('/history/entity', [\App\Http\Controllers\Admin\ApprovalController::class, 'getHistory'])->name('history');
+        Route::get('/statistics', [\App\Http\Controllers\Admin\ApprovalController::class, 'getStatistics'])->name('statistics');
+
         Route::get('/{id}', [\App\Http\Controllers\Admin\ApprovalController::class, 'show'])->name('show');
         Route::post('/{id}/approve', [\App\Http\Controllers\Admin\ApprovalController::class, 'approve'])->name('approve');
         Route::post('/{id}/reject', [\App\Http\Controllers\Admin\ApprovalController::class, 'reject'])->name('reject');
         Route::post('/{id}/override', [\App\Http\Controllers\Admin\ApprovalController::class, 'override'])->name('override');
-        
-        // AJAX: Get approval history
-        Route::get('/history/entity', [\App\Http\Controllers\Admin\ApprovalController::class, 'getHistory'])->name('history');
-        Route::get('/statistics', [\App\Http\Controllers\Admin\ApprovalController::class, 'getStatistics'])->name('statistics');
     });
 
     // Project Role Management
@@ -437,6 +461,8 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
     Route::prefix('reports')->name('reports.')->group(function () {
         // Budget vs Actual Report
         Route::get('/budget-vs-actual', [\App\Http\Controllers\Admin\BudgetReportController::class, 'index'])->name('budget-vs-actual');
+        Route::post('/budget-vs-actual/queue-export', [\App\Http\Controllers\Admin\BudgetReportController::class, 'queueExport'])->name('budget-vs-actual.queue-export');
+        Route::get('/budget-vs-actual/exports/{exportId}/download', [\App\Http\Controllers\Admin\BudgetReportController::class, 'downloadQueuedExport'])->name('budget-vs-actual.exports.download');
         Route::get('/budget-vs-actual/export', [\App\Http\Controllers\Admin\BudgetReportController::class, 'export'])->name('budget-vs-actual.export');
         Route::get('/budget-drilldown/{projectId}/{costCodeId}', [\App\Http\Controllers\Admin\BudgetReportController::class, 'drilldown'])->name('budget-drilldown');
         
@@ -449,11 +475,154 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         
         // Committed vs Actual Tracking
         Route::get('/committed-vs-actual', [\App\Http\Controllers\Admin\CommittedActualReportController::class, 'index'])->name('committed-vs-actual');
+        Route::get('/committed-vs-actual/export', [\App\Http\Controllers\Admin\CommittedActualReportController::class, 'export'])->name('committed-vs-actual.export');
+    });
+
+    // Project Takeoffs & Estimates
+    Route::prefix('takeoffs')->name('takeoffs.')->group(function () {
+        Route::get('/', [TakeoffController::class, 'index'])->name('index');
+        Route::get('/create', [TakeoffController::class, 'create'])->name('create');
+        Route::post('/', [TakeoffController::class, 'store'])->name('store');
+        Route::get('/{id}', [TakeoffController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [TakeoffController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [TakeoffController::class, 'update'])->name('update');
+        Route::delete('/{id}', [TakeoffController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/drawings', [TakeoffController::class, 'uploadDrawings'])->name('upload-drawings');
+        Route::post('/{id}/drawings/{drawingId}/process', [TakeoffController::class, 'processDrawing'])->name('process-drawing');
+        Route::delete('/{id}/drawings/{drawingId}', [TakeoffController::class, 'deleteDrawing'])->name('delete-drawing');
+        Route::get('/{id}/drawings/{drawingId}/download', [TakeoffController::class, 'downloadDrawing'])->name('download-drawing');
+        Route::get('/{id}/processing-status', [TakeoffController::class, 'checkProcessingStatus'])->name('processing-status');
+        Route::post('/{id}/finalize', [TakeoffController::class, 'finalize'])->name('finalize');
+        Route::post('/{id}/convert-to-po', [TakeoffController::class, 'convertToPo'])->name('convert-to-po');
+        Route::post('/item-suggestions', [TakeoffController::class, 'getItemSuggestions'])->name('item-suggestions');
+    });
+
+    // Project Scheduling (CPM Engine)
+    Route::prefix('schedule')->name('schedule.')->group(function () {
+        Route::get('/', [ScheduleController::class, 'index'])->name('index');
+        Route::get('/calendars', [ScheduleController::class, 'calendars'])->name('calendars');
+        Route::post('/calendars', [ScheduleController::class, 'storeCalendar'])->name('storeCalendar');
+        Route::put('/calendars/{calId}', [ScheduleController::class, 'updateCalendar'])->name('updateCalendar');
+        Route::delete('/calendars/{calId}', [ScheduleController::class, 'deleteCalendar'])->name('deleteCalendar');
+        Route::post('/calendars/{calId}/exceptions', [ScheduleController::class, 'storeCalendarException'])->name('storeCalendarException');
+        Route::delete('/calendars/{calId}/exceptions/{exId}', [ScheduleController::class, 'deleteCalendarException'])->name('deleteCalendarException');
+
+        // Project-scoped schedule routes
+        Route::get('/{projectId}', [ScheduleController::class, 'show'])->name('show');
+        Route::post('/{projectId}/calculate', [ScheduleController::class, 'calculate'])->name('calculate');
+        Route::get('/{projectId}/gantt-data', [ScheduleController::class, 'ganttData'])->name('ganttData');
+        Route::get('/{projectId}/critical-path', [ScheduleController::class, 'criticalPath'])->name('criticalPath');
+        Route::get('/{projectId}/health', [ScheduleController::class, 'health'])->name('health');
+        Route::get('/{projectId}/lookahead', [ScheduleController::class, 'lookahead'])->name('lookahead');
+        Route::put('/{projectId}/settings', [ScheduleController::class, 'updateSettings'])->name('updateSettings');
+
+        // Activities
+        Route::post('/{projectId}/activities', [ScheduleController::class, 'storeActivity'])->name('storeActivity');
+        Route::put('/{projectId}/activities/{activityId}', [ScheduleController::class, 'updateActivity'])->name('updateActivity');
+        Route::delete('/{projectId}/activities/{activityId}', [ScheduleController::class, 'deleteActivity'])->name('deleteActivity');
+        Route::post('/{projectId}/activities/reorder', [ScheduleController::class, 'reorderActivities'])->name('reorderActivities');
+        Route::post('/{projectId}/activities/{activityId}/actuals', [ScheduleController::class, 'updateActuals'])->name('updateActuals');
+
+        // Dependencies
+        Route::post('/{projectId}/dependencies', [ScheduleController::class, 'storeDependency'])->name('storeDependency');
+        Route::delete('/{projectId}/dependencies/{depId}', [ScheduleController::class, 'deleteDependency'])->name('deleteDependency');
+
+        // Drivers
+        Route::post('/{projectId}/drivers', [ScheduleController::class, 'storeDriver'])->name('storeDriver');
+        Route::put('/{projectId}/drivers/{driverId}', [ScheduleController::class, 'updateDriver'])->name('updateDriver');
+        Route::delete('/{projectId}/drivers/{driverId}', [ScheduleController::class, 'deleteDriver'])->name('deleteDriver');
+
+        // Baselines
+        Route::post('/{projectId}/baselines', [ScheduleController::class, 'createBaseline'])->name('createBaseline');
+        Route::get('/{projectId}/baselines/{baselineId}/variance', [ScheduleController::class, 'baselineVariance'])->name('baselineVariance');
+    });
+
+    // AI Settings
+    Route::prefix('ai-settings')->name('ai-settings.')->group(function () {
+        Route::get('/', [AiSettingsController::class, 'index'])->name('index');
+        Route::post('/', [AiSettingsController::class, 'update'])->name('update');
+        Route::post('/test', [AiSettingsController::class, 'testConnection'])->name('test');
+    });
+
+    // ── Subcontractor & Contract Management ──
+
+    // Contracts
+    Route::prefix('contracts')->name('contracts.')->group(function () {
+        Route::get('/', [ContractController::class, 'index'])->name('index');
+        Route::get('/create', [ContractController::class, 'create'])->name('create');
+        Route::post('/store', [ContractController::class, 'store'])->name('store');
+        Route::get('/view/{id}', [ContractController::class, 'show'])->name('show');
+        Route::get('/edit/{id}', [ContractController::class, 'edit'])->name('edit');
+        Route::put('/update/{id}', [ContractController::class, 'update'])->name('update');
+        Route::delete('/delete/{id}', [ContractController::class, 'destroy'])->name('destroy');
+        Route::post('/update-status/{id}', [ContractController::class, 'updateStatus'])->name('updatestatus');
+        Route::post('/{id}/upload-documents', [ContractController::class, 'uploadDocuments'])->name('upload-documents');
+        Route::get('/{id}/documents/{docId}/download', [ContractController::class, 'downloadDocument'])->name('download-document');
+        Route::delete('/{id}/documents/{docId}', [ContractController::class, 'deleteDocument'])->name('delete-document');
+        Route::post('/{id}/release-retention', [ContractController::class, 'releaseRetention'])->name('release-retention');
+
+        // Contract Invoices (nested)
+        Route::get('/{contractId}/invoices', [ContractInvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('/{contractId}/invoices/create', [ContractInvoiceController::class, 'create'])->name('invoices.create');
+        Route::post('/{contractId}/invoices/store', [ContractInvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('/{contractId}/invoices/{id}', [ContractInvoiceController::class, 'show'])->name('invoices.show');
+        Route::post('/{contractId}/invoices/{id}/pay', [ContractInvoiceController::class, 'recordPayment'])->name('invoices.pay');
+    });
+
+    // Contract Change Orders
+    Route::prefix('contract-change-orders')->name('contract-change-orders.')->group(function () {
+        Route::get('/', [ContractChangeOrderController::class, 'index'])->name('index');
+        Route::get('/contracts/{contractId}/create', [ContractChangeOrderController::class, 'create'])->name('create');
+        Route::post('/contracts/{contractId}', [ContractChangeOrderController::class, 'store'])->name('store');
+        Route::get('/{id}', [ContractChangeOrderController::class, 'show'])->name('show');
+        Route::post('/{id}/submit', [ContractChangeOrderController::class, 'submit'])->name('submit');
+        Route::post('/{id}/approve', [ContractChangeOrderController::class, 'approve'])->name('approve');
+        Route::post('/{id}/reject', [ContractChangeOrderController::class, 'reject'])->name('reject');
+        Route::post('/{id}/cancel', [ContractChangeOrderController::class, 'cancel'])->name('cancel');
+    });
+
+    // Supplier Compliance
+    Route::prefix('suppliers/{supplierId}/compliance')->name('supplier-compliance.')->group(function () {
+        Route::get('/', [SupplierComplianceController::class, 'index'])->name('index');
+        Route::post('/', [SupplierComplianceController::class, 'store'])->name('store');
+        Route::put('/{id}', [SupplierComplianceController::class, 'update'])->name('update');
+        Route::delete('/{id}', [SupplierComplianceController::class, 'destroy'])->name('destroy');
+    });
+
+    // Compliance documents & dashboard
+    Route::post('compliance/{id}/upload', [SupplierComplianceController::class, 'uploadDocument'])->name('compliance.upload');
+    Route::get('compliance/{id}/download', [SupplierComplianceController::class, 'downloadDocument'])->name('compliance.download');
+    Route::get('compliance/dashboard', [SupplierComplianceController::class, 'dashboard'])->name('compliance.dashboard');
+
+    // Security
+    Route::prefix('security')->name('security.')->group(function () {
+        Route::get('/2fa', [SecurityController::class, 'twoFactorSettings'])->name('2fa');
+        Route::post('/2fa/setup', [SecurityController::class, 'generateTwoFactorSecret'])->name('2fa.setup');
+        Route::post('/2fa/confirm', [SecurityController::class, 'confirmTwoFactor'])->name('2fa.confirm');
+        Route::post('/2fa/disable', [SecurityController::class, 'disableTwoFactor'])->name('2fa.disable');
+        Route::get('/audit-logs', [SecurityController::class, 'auditLogs'])->name('audit-logs');
+    });
+
+    // Attachments (Polymorphic File Upload System)
+    Route::prefix('attachments')->name('attachments.')->group(function () {
+        Route::post('/upload', [AttachmentController::class, 'upload'])->name('upload');
+        Route::post('/list', [AttachmentController::class, 'list'])->name('list');
+        Route::post('/reorder', [AttachmentController::class, 'reorder'])->name('reorder');
+        Route::post('/delete-multiple', [AttachmentController::class, 'destroyMultiple'])->name('destroy-multiple');
+        Route::get('/{id}/download', [AttachmentController::class, 'download'])->name('download');
+        Route::get('/{id}/view', [AttachmentController::class, 'view'])->name('view');
+        Route::delete('/{id}', [AttachmentController::class, 'destroy'])->name('destroy');
     });
 });
 
 // Procore Webhook (No auth required)
 Route::post('procore/webhook', [ProcoreController::class, 'webhook'])->name('procore.webhook');
+
+// Debug-only: Seed database via HTTP (since artisan hangs on this project)
+if (app()->environment('local') || config('app.debug')) {
+    Route::get('_dev/seed', [\App\Http\Controllers\DevSeedController::class, 'run'])->name('dev.seed');
+    Route::get('_dev/debug-auth', [\App\Http\Controllers\DevSeedController::class, 'debugAuth'])->name('dev.debug-auth');
+}
 
 // 404 Error Route
 Route::get('default404', function () {

@@ -34,8 +34,8 @@ class CostCodeController extends Controller
             'cc_no' => trim($validated['cc_no']),
             'cc_description' => trim($validated['cc_description']),
             'cc_status' => 1,
-            'cc_created_at' => Carbon::now(),
-            'cc_created_by' => auth()->id(),
+            'cc_createdate' => Carbon::now(),
+            'cc_createby' => auth()->id(),
         ]);
 
         return redirect()->route('admin.costcodes.index')->with('success', 'Cost code created successfully.');
@@ -69,8 +69,8 @@ class CostCodeController extends Controller
     public function destroy(CostCode $costcode)
     {
         $companyId = session('company_id');
-        $canDelete = DB::table('purchase_order_items')
-                ->where('porder_item_ccode', $costcode->cc_id)
+        $canDelete = DB::table('purchase_order_details')
+                ->where('po_detail_taxcode', $costcode->cc_id)
                 ->where('company_id', $companyId)
                 ->doesntExist()
             && DB::table('budget_master')
@@ -145,8 +145,8 @@ class CostCodeController extends Controller
             'full_code' => $fullCode,
             'level' => $level,
             'cc_status' => 1,
-            'cc_created_at' => Carbon::now(),
-            'cc_created_by' => auth()->id(),
+            'cc_createdate' => Carbon::now(),
+            'cc_createby' => auth()->id(),
         ]);
 
         return back()->with('success', 'Hierarchical cost code created: ' . $fullCode);

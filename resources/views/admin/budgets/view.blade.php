@@ -1,4 +1,4 @@
-@extends('layout.master')
+@extends('layouts.admin')
 
 @section('title', 'Budget Summary - ' . $project->proj_name)
 
@@ -29,8 +29,8 @@
                             <div class="card bg-primary text-white">
                                 <div class="card-body">
                                     <h6 class="card-title">Total Budget</h6>
-                                    <h3>${{ number_format($summary['total_budget'], 2) }}</h3>
-                                    <small>Original: ${{ number_format($summary['total_original'], 2) }}</small>
+                                    <h3>${{ number_format($summary->total_budget, 2) }}</h3>
+                                    <small>Original: ${{ number_format($summary->total_original, 2) }}</small>
                                 </div>
                             </div>
                         </div>
@@ -38,8 +38,8 @@
                             <div class="card bg-warning text-white">
                                 <div class="card-body">
                                     <h6 class="card-title">Committed</h6>
-                                    <h3>${{ number_format($summary['total_committed'], 2) }}</h3>
-                                    <small>{{ $summary['total_budget'] > 0 ? number_format(($summary['total_committed'] / $summary['total_budget']) * 100, 1) : 0 }}% of budget</small>
+                                    <h3>${{ number_format($summary->total_committed, 2) }}</h3>
+                                    <small>{{ $summary->total_budget > 0 ? number_format(($summary->total_committed / $summary->total_budget) * 100, 1) : 0 }}% of budget</small>
                                 </div>
                             </div>
                         </div>
@@ -47,8 +47,8 @@
                             <div class="card bg-success text-white">
                                 <div class="card-body">
                                     <h6 class="card-title">Available</h6>
-                                    <h3>${{ number_format($summary['total_available'], 2) }}</h3>
-                                    <small>{{ $summary['total_budget'] > 0 ? number_format(($summary['total_available'] / $summary['total_budget']) * 100, 1) : 0 }}% remaining</small>
+                                    <h3>${{ number_format($summary->total_available, 2) }}</h3>
+                                    <small>{{ $summary->total_budget > 0 ? number_format(($summary->total_available / $summary->total_budget) * 100, 1) : 0 }}% remaining</small>
                                 </div>
                             </div>
                         </div>
@@ -56,8 +56,8 @@
                             <div class="card bg-info text-white">
                                 <div class="card-body">
                                     <h6 class="card-title">Actual Spent</h6>
-                                    <h3>${{ number_format($summary['total_actual'], 2) }}</h3>
-                                    <small>{{ $summary['total_budget'] > 0 ? number_format(($summary['total_actual'] / $summary['total_budget']) * 100, 1) : 0 }}% of budget</small>
+                                    <h3>${{ number_format($summary->total_actual, 2) }}</h3>
+                                    <small>{{ $summary->total_budget > 0 ? number_format(($summary->total_actual / $summary->total_budget) * 100, 1) : 0 }}% of budget</small>
                                 </div>
                             </div>
                         </div>

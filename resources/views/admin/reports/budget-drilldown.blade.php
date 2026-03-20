@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Budget Drill-down - ' . ($costCode->cc_name ?? 'Unknown'))
+@section('title', 'Budget Drill-down - ' . ($costCode->cc_description ?? 'Unknown'))
 
 @section('content')
 <div class="container-fluid">
@@ -11,7 +11,7 @@
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-search-dollar"></i> 
-                        Budget Drill-down: {{ $costCode->cc_no ?? 'N/A' }} - {{ $costCode->cc_name ?? 'Unknown' }}
+                        Budget Drill-down: {{ $costCode->cc_no ?? 'N/A' }} - {{ $costCode->cc_description ?? 'Unknown' }}
                     </h3>
                     <div class="card-tools">
                         <a href="{{ url()->previous() }}" class="btn btn-secondary btn-sm">
@@ -26,7 +26,7 @@
                             <strong>Cost Code:</strong> {{ $costCode->cc_no }}
                         </div>
                         <div class="col-md-3">
-                            <strong>Description:</strong> {{ $costCode->cc_name }}
+                            <strong>Description:</strong> {{ $costCode->cc_description }}
                         </div>
                         <div class="col-md-3">
                             <strong>Level:</strong> {{ $costCode->level ?? 'N/A' }}
@@ -53,7 +53,7 @@
                     <h3 class="card-title">
                         <i class="fas fa-file-invoice-dollar"></i> 
                         Purchase Orders (Committed)
-                        <span class="badge badge-light ml-2">{{ count($purchaseOrders ?? []) }} POs</span>
+                        <span class="badge bg-light ms-2">{{ count($purchaseOrders ?? []) }} POs</span>
                     </h3>
                 </div>
                 <div class="card-body">
@@ -77,17 +77,13 @@
                                                 {{ $po->porder_no }}
                                             </a>
                                         </td>
-                                        <td>{{ $po->porder_date ? date('m/d/Y', strtotime($po->porder_date)) : 'N/A' }}</td>
+                                        <td>{{ $po->porder_createdate ? date('m/d/Y', strtotime($po->porder_createdate)) : 'N/A' }}</td>
                                         <td class="text-right">${{ number_format($po->po_amount ?? 0, 2) }}</td>
                                         <td class="text-center">
-                                            @if($po->porder_status == 'approved' || $po->porder_status == 2)
-                                                <span class="badge badge-success">Approved</span>
-                                            @elseif($po->porder_status == 'pending' || $po->porder_status == 1)
-                                                <span class="badge badge-warning">Pending</span>
-                                            @elseif($po->porder_status == 'rejected' || $po->porder_status == 3)
-                                                <span class="badge badge-danger">Rejected</span>
+                                            @if($po->porder_status == 1)
+                                                <span class="badge bg-success">Active</span>
                                             @else
-                                                <span class="badge badge-secondary">{{ $po->porder_status }}</span>
+                                                <span class="badge bg-secondary">Inactive</span>
                                             @endif
                                         </td>
                                         <td>
@@ -128,7 +124,7 @@
                     <h3 class="card-title">
                         <i class="fas fa-truck-loading"></i> 
                         Receive Orders (Actual)
-                        <span class="badge badge-light ml-2">{{ count($receiveOrders ?? []) }} ROs</span>
+                        <span class="badge bg-light ms-2">{{ count($receiveOrders ?? []) }} ROs</span>
                     </h3>
                 </div>
                 <div class="card-body">
@@ -151,11 +147,11 @@
                                         <td class="text-right">${{ number_format($ro->ro_amount ?? 0, 2) }}</td>
                                         <td class="text-center">
                                             @if($ro->ro_status == 'received' || $ro->ro_status == 2)
-                                                <span class="badge badge-success">Received</span>
+                                                <span class="badge bg-success">Received</span>
                                             @elseif($ro->ro_status == 'partial' || $ro->ro_status == 1)
-                                                <span class="badge badge-warning">Partial</span>
+                                                <span class="badge bg-warning">Partial</span>
                                             @else
-                                                <span class="badge badge-secondary">{{ $ro->ro_status }}</span>
+                                                <span class="badge bg-secondary">{{ $ro->ro_status }}</span>
                                             @endif
                                         </td>
                                     </tr>

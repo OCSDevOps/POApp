@@ -47,10 +47,8 @@ class ReceiveOrderController extends Controller
 
         $receiveOrders = $query->orderBy('rorder_createdate', 'DESC')->paginate(15);
 
-        // Get receiving summary (filtered by company)
-        $companyId = session('company_id');
+        // Get receiving summary from DB view (view does not have company_id column)
         $summary = DB::table('vw_receiving_summary')
-            ->where('company_id', $companyId)
             ->when($request->filled('po_id'), function ($q) use ($request) {
                 return $q->where('porder_id', $request->po_id);
             })
@@ -99,7 +97,7 @@ class ReceiveOrderController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'po_id' => 'required|exists:porder_master,porder_id',
+            'po_id' => 'required|exists:purchase_order_master,porder_id',
             'slip_no' => 'required|string|max:100',
             'receive_date' => 'required|date',
             'items' => 'required|array|min:1',
@@ -179,8 +177,6 @@ class ReceiveOrderController extends Controller
                         ->where('ro_detail_item', $itemCode)
                         ->update([
                             'ro_detail_quantity' => $data['quantity'],
-                            'ro_detail_modifydate' => now(),
-                            'ro_detail_modifyby' => auth()->id(),
                         ]);
                 }
             }
@@ -261,9 +257,7 @@ class ReceiveOrderController extends Controller
      */
     public function backOrderReport(Request $request)
     {
-        $companyId = session('company_id');
-        $query = DB::table('vw_back_order_report')
-            ->where('company_id', $companyId);
+        $query = DB::table('vw_back_order_report');
 
         if ($request->filled('project_id')) {
             $query->where('porder_project_ms', $request->project_id);
@@ -286,9 +280,7 @@ class ReceiveOrderController extends Controller
      */
     public function receivingSummary(Request $request)
     {
-        $companyId = session('company_id');
-        $query = DB::table('vw_receiving_summary')
-            ->where('company_id', $companyId);
+        $query = DB::table('vw_receiving_summary');
 
         if ($request->filled('project_id')) {
             $query->where('proj_id', $request->project_id);

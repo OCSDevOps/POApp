@@ -320,7 +320,7 @@ class SupplierCatalogController extends Controller
             ->orderBy('supcat_item_code')
             ->get();
 
-        $filename = 'catalog_' . $supplier->sup_code . '_' . date('Y-m-d_His') . '.csv';
+        $filename = 'catalog_' . str_replace(' ', '_', $supplier->sup_name) . '_' . date('Y-m-d_His') . '.csv';
         
         $headers = [
             'Content-Type' => 'text/csv',
@@ -369,9 +369,9 @@ class SupplierCatalogController extends Controller
         $orderHistory = DB::table('purchase_order_master')
             ->where('porder_supplier_ms', $supplierId)
             ->where('company_id', $companyId)
-            ->where('porder_general_status', '!=', 'cancelled')
-            ->selectRaw('YEAR(porder_date) as year, MONTH(porder_date) as month, COUNT(*) as order_count, SUM(porder_grand_total) as total_amount')
-            ->groupBy(DB::raw('YEAR(porder_date)'), DB::raw('MONTH(porder_date)'))
+            ->where('porder_status', 1)
+            ->selectRaw('YEAR(porder_createdate) as year, MONTH(porder_createdate) as month, COUNT(*) as order_count, SUM(porder_total_amount + porder_total_tax) as total_amount')
+            ->groupBy(DB::raw('YEAR(porder_createdate)'), DB::raw('MONTH(porder_createdate)'))
             ->orderBy('year', 'DESC')
             ->orderBy('month', 'DESC')
             ->limit(12)

@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
-use App\Traits\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ItemCategory extends Model
 {
-    use HasFactory, CompanyScope;
+    use HasFactory;
 
     protected $table = 'item_category_tab';
     protected $primaryKey = 'icat_id';
@@ -16,11 +15,10 @@ class ItemCategory extends Model
 
     protected $fillable = [
         'icat_name',
-        'icat_description',
+        'icat_details',
         'icat_status',
-        'icat_created_by',
-        'icat_created_at',
-        'company_id',
+        'icat_createby',
+        'icat_createdate',
     ];
 
     /**

@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
-use App\Traits\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class RfqQuote extends Model
 {
-    use HasFactory, CompanyScope;
+    use HasFactory;
 
     protected $table = 'rfq_quotes';
     protected $primaryKey = 'rfqq_id';
@@ -22,14 +21,12 @@ class RfqQuote extends Model
         'rfqq_valid_until',
         'rfqq_notes',
         'rfqq_created_at',
-        'company_id',
     ];
 
     protected $casts = [
         'rfqq_quoted_price' => 'decimal:2',
         'rfqq_valid_until' => 'date',
         'rfqq_created_at' => 'datetime',
-        'company_id' => 'integer',
     ];
 
     /**

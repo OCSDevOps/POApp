@@ -15,8 +15,6 @@ class TaxGroup extends Model
     protected $fillable = [
         'name',
         'percentage',
-        'description',
-        'procore_tax_code_id',
         'created_at',
     ];
 }

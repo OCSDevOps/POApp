@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
+use App\Models\PurchaseOrderAttachment;
 use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\Item;
@@ -16,6 +19,7 @@ use App\Models\CostCode;
 use App\Models\UnitOfMeasure;
 use App\Models\TaxGroup;
 use App\Services\BudgetService;
+use App\Services\Cache\ReferenceDataCacheService;
 use App\Services\ApprovalService;
 use App\Services\PoChangeOrderService;
 
@@ -24,15 +28,18 @@ class PurchaseOrderController extends Controller
     protected $budgetService;
     protected $approvalService;
     protected $poChangeOrderService;
+    protected $referenceDataCacheService;
 
     public function __construct(
         BudgetService $budgetService,
         ApprovalService $approvalService,
-        PoChangeOrderService $poChangeOrderService
+        PoChangeOrderService $poChangeOrderService,
+        ReferenceDataCacheService $referenceDataCacheService
     ) {
         $this->budgetService = $budgetService;
         $this->approvalService = $approvalService;
         $this->poChangeOrderService = $poChangeOrderService;
+        $this->referenceDataCacheService = $referenceDataCacheService;
     }
 
     /**
@@ -48,12 +55,12 @@ class PurchaseOrderController extends Controller
             ->byProject($project)
             ->bySupplier($supplier)
             ->byStatus($status)
-            ->whereNotNull('porder_type')
             ->orderBy('porder_id', 'DESC')
             ->get();
 
-        $projects = Project::active()->orderByName()->get();
-        $suppliers = Supplier::active()->orderByName()->get();
+        $companyId = (int) session('company_id');
+        $projects = $this->referenceDataCacheService->getActiveProjects($companyId);
+        $suppliers = $this->referenceDataCacheService->getActiveSuppliers($companyId);
 
         $filters = [
             'project' => $project,
@@ -67,7 +74,7 @@ class PurchaseOrderController extends Controller
     /**
      * Show the form for creating a new purchase order.
      */
-    public function create()
+    public function create(Request $request)
     {
         $user = Auth::user();
         
@@ -81,12 +88,13 @@ class PurchaseOrderController extends Controller
             return redirect()->route('error.404');
         }
 
-        $items = Item::active()->nonRentable()->orderByName()->get();
-        $projects = Project::active()->orderByName()->get();
-        $suppliers = Supplier::active()->orderByName()->get();
+        $companyId = (int) session('company_id');
+        $items = Item::active()->orderByName()->get();
+        $projects = $this->referenceDataCacheService->getActiveProjects($companyId);
+        $suppliers = $this->referenceDataCacheService->getActiveSuppliers($companyId);
         $packages = \App\Models\ItemPackage::orderBy('ipack_name', 'ASC')->get();
         $taxGroups = \App\Models\TaxGroup::orderBy('id', 'ASC')->get();
-        $costCodes = CostCode::orderById()->get();
+        $costCodes = $this->referenceDataCacheService->getActiveCostCodes($companyId);
         $categories = ItemCategory::orderBy('icat_id', 'ASC')->get();
         $uoms = UnitOfMeasure::orderBy('uom_id', 'ASC')->get();
 
@@ -110,8 +118,8 @@ class PurchaseOrderController extends Controller
         $request->validate([
             'po_project' => 'required',
             'po_supplier' => 'required',
-            'po_type' => 'required',
-            'po_date' => 'required|date',
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,csv,txt|max:10240',
         ]);
 
         DB::beginTransaction();
@@ -124,16 +132,19 @@ class PurchaseOrderController extends Controller
                 'porder_no' => $poNumber,
                 'porder_project_ms' => $request->po_project,
                 'porder_supplier_ms' => $request->po_supplier,
-                'porder_type' => $request->po_type,
-                'porder_date' => $request->po_date,
-                'porder_delivery_date' => $request->po_delivery_date,
-                'porder_notes' => $request->po_notes,
-                'porder_terms' => $request->po_terms,
-                'porder_general_status' => 'pending',
-                'porder_delivery_status' => '0',
+                'porder_address' => $request->po_address ?? '',
+                'porder_delivery_note' => $request->po_delivery_note,
+                'porder_description' => $request->po_description,
+                'porder_total_item' => 0,
+                'porder_total_amount' => 0,
+                'porder_total_tax' => 0,
+                'porder_status' => 1,
+                'porder_delivery_status' => 0,
+                'porder_original_total' => 0,
+                'porder_change_orders_total' => 0,
                 'integration_status' => 'pending',
-                'porder_created_by' => Auth::id(),
-                'porder_created_at' => now(),
+                'porder_createby' => Auth::id(),
+                'porder_createdate' => now(),
             ]);
 
             // Process items
@@ -146,15 +157,18 @@ class PurchaseOrderController extends Controller
                     $itemTax = $itemTotal * ($item['tax_rate'] ?? 0) / 100;
                     
                     PurchaseOrderItem::create([
-                        'porder_item_porder_ms' => $purchaseOrder->porder_id,
-                        'porder_item_code' => $item['code'],
-                        'porder_item_name' => $item['name'],
-                        'porder_item_qty' => $item['quantity'],
-                        'porder_item_price' => $item['price'],
-                        'porder_item_tax' => $itemTax,
-                        'porder_item_total' => $itemTotal + $itemTax,
-                        'porder_item_ccode' => $item['cost_code'] ?? null,
-                        // company_id auto-added by CompanyScope trait
+                        'po_detail_autogen' => uniqid('pod_'),
+                        'po_detail_porder_ms' => $purchaseOrder->porder_id,
+                        'po_detail_item' => $item['code'],
+                        'po_detail_sku' => $item['name'],
+                        'po_detail_taxcode' => $item['tax_code'] ?? '',
+                        'po_detail_quantity' => $item['quantity'],
+                        'po_detail_unitprice' => $item['price'],
+                        'po_detail_subtotal' => $itemTotal,
+                        'po_detail_taxamount' => $itemTax,
+                        'po_detail_total' => $itemTotal + $itemTax,
+                        'po_detail_createdate' => now(),
+                        'po_detail_status' => 1,
                     ]);
 
                     $total += $itemTotal;
@@ -164,10 +178,10 @@ class PurchaseOrderController extends Controller
                 $grandTotal = $total + $tax;
 
                 $purchaseOrder->update([
-                    'porder_total' => $total,
-                    'porder_tax' => $tax,
-                    'porder_grand_total' => $grandTotal,
-                    'original_total' => $grandTotal,
+                    'porder_total_amount' => $total,
+                    'porder_total_tax' => $tax,
+                    'porder_total_item' => count($request->items),
+                    'porder_original_total' => $grandTotal,
                 ]);
 
                 // Budget validation - check availability
@@ -227,6 +241,10 @@ class PurchaseOrderController extends Controller
                 }
             }
 
+            if ($request->hasFile('attachments')) {
+                $this->storeAttachments($purchaseOrder, $request->file('attachments'));
+            }
+
             DB::commit();
             return redirect()->route('admin.porder.index')
                 ->with('success', 'Purchase Order created successfully.');
@@ -242,7 +260,7 @@ class PurchaseOrderController extends Controller
      */
     public function show($id)
     {
-        $purchaseOrder = PurchaseOrder::with(['project', 'supplier', 'items'])->findOrFail($id);
+        $purchaseOrder = PurchaseOrder::with(['project', 'supplier', 'items', 'attachments'])->findOrFail($id);
         
         return view('admin.porder.view_pur_order', compact('purchaseOrder'));
     }
@@ -252,19 +270,20 @@ class PurchaseOrderController extends Controller
      */
     public function edit($id)
     {
-        $purchaseOrder = PurchaseOrder::with(['items'])->findOrFail($id);
+        $purchaseOrder = PurchaseOrder::with(['items', 'attachments'])->findOrFail($id);
         
         // Authorization: Ensure user can only edit their company's POs
         if (!$purchaseOrder->isOwnedByCurrentCompany()) {
             abort(403, 'Unauthorized access to another company\'s purchase order');
         }
         
-        $items = Item::active()->nonRentable()->orderByName()->get();
-        $projects = Project::active()->orderByName()->get();
-        $suppliers = Supplier::active()->orderByName()->get();
+        $companyId = (int) session('company_id');
+        $items = Item::active()->orderByName()->get();
+        $projects = $this->referenceDataCacheService->getActiveProjects($companyId);
+        $suppliers = $this->referenceDataCacheService->getActiveSuppliers($companyId);
         $packages = \App\Models\ItemPackage::orderBy('ipack_name', 'ASC')->get();
         $taxGroups = \App\Models\TaxGroup::orderBy('id', 'ASC')->get();
-        $costCodes = CostCode::orderById()->get();
+        $costCodes = $this->referenceDataCacheService->getActiveCostCodes($companyId);
         $categories = ItemCategory::orderBy('icat_id', 'ASC')->get();
         $uoms = UnitOfMeasure::orderBy('uom_id', 'ASC')->get();
 
@@ -282,14 +301,16 @@ class PurchaseOrderController extends Controller
         $request->validate([
             'po_project' => 'required',
             'po_supplier' => 'required',
-            'po_type' => 'required',
-            'po_date' => 'required|date',
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,csv,txt|max:10240',
+            'remove_attachment_ids' => 'nullable|array',
+            'remove_attachment_ids.*' => 'integer',
         ]);
 
         DB::beginTransaction();
         try {
             $purchaseOrder = PurchaseOrder::findOrFail($id);
-            
+
             // Authorization: Ensure user can only update their company's POs
             if (!$purchaseOrder->isOwnedByCurrentCompany()) {
                 abort(403, 'Unauthorized access to another company\'s purchase order');
@@ -298,17 +319,15 @@ class PurchaseOrderController extends Controller
             $purchaseOrder->update([
                 'porder_project_ms' => $request->po_project,
                 'porder_supplier_ms' => $request->po_supplier,
-                'porder_type' => $request->po_type,
-                'porder_date' => $request->po_date,
-                'porder_delivery_date' => $request->po_delivery_date,
-                'porder_notes' => $request->po_notes,
-                'porder_terms' => $request->po_terms,
-                'porder_modified_by' => Auth::id(),
-                'porder_modified_at' => now(),
+                'porder_address' => $request->po_address ?? $purchaseOrder->porder_address,
+                'porder_delivery_note' => $request->po_delivery_note,
+                'porder_description' => $request->po_description,
+                'porder_modifyby' => Auth::id(),
+                'porder_modifydate' => now(),
             ]);
 
             // Delete existing items and re-add (Eloquent automatically filters by company_id)
-            PurchaseOrderItem::where('porder_item_porder_ms', $id)->delete();
+            PurchaseOrderItem::where('po_detail_porder_ms', $id)->delete();
 
             // Process items
             if ($request->has('items')) {
@@ -318,17 +337,20 @@ class PurchaseOrderController extends Controller
                 foreach ($request->items as $item) {
                     $itemTotal = $item['quantity'] * $item['price'];
                     $itemTax = $itemTotal * ($item['tax_rate'] ?? 0) / 100;
-                    
+
                     PurchaseOrderItem::create([
-                        'porder_item_porder_ms' => $purchaseOrder->porder_id,
-                        'porder_item_code' => $item['code'],
-                        'porder_item_name' => $item['name'],
-                        'porder_item_qty' => $item['quantity'],
-                        'porder_item_price' => $item['price'],
-                        'porder_item_tax' => $itemTax,
-                        'porder_item_total' => $itemTotal + $itemTax,
-                        'porder_item_ccode' => $item['cost_code'] ?? null,
-                        // company_id auto-added by CompanyScope trait
+                        'po_detail_autogen' => uniqid('pod_'),
+                        'po_detail_porder_ms' => $purchaseOrder->porder_id,
+                        'po_detail_item' => $item['code'],
+                        'po_detail_sku' => $item['name'],
+                        'po_detail_taxcode' => $item['tax_code'] ?? '',
+                        'po_detail_quantity' => $item['quantity'],
+                        'po_detail_unitprice' => $item['price'],
+                        'po_detail_subtotal' => $itemTotal,
+                        'po_detail_taxamount' => $itemTax,
+                        'po_detail_total' => $itemTotal + $itemTax,
+                        'po_detail_createdate' => now(),
+                        'po_detail_status' => 1,
                     ]);
 
                     $total += $itemTotal;
@@ -336,16 +358,17 @@ class PurchaseOrderController extends Controller
                 }
 
                 $newGrandTotal = $total + $tax;
-                $originalTotal = $purchaseOrder->original_total ?? $purchaseOrder->porder_grand_total;
+                $oldGrandTotal = $purchaseOrder->grand_total;
+                $originalTotal = $purchaseOrder->porder_original_total ?? $oldGrandTotal;
 
                 // Check if amount changed - create PCO if significant change
-                if (abs($newGrandTotal - $purchaseOrder->porder_grand_total) > 0.01) {
+                if (abs($newGrandTotal - $oldGrandTotal) > 0.01) {
                     // Create PO Change Order
                     $pco = $this->poChangeOrderService->createPoChangeOrder(
                         $purchaseOrder->porder_id,
                         Auth::id(),
                         'amount_change',
-                        $purchaseOrder->porder_grand_total,
+                        $oldGrandTotal,
                         $newGrandTotal,
                         $request->change_reason ?? 'PO amount updated during edit'
                     );
@@ -356,7 +379,7 @@ class PurchaseOrderController extends Controller
                             'PoChangeOrder',
                             $pco->poco_id,
                             $request->po_project,
-                            abs($newGrandTotal - $purchaseOrder->porder_grand_total)
+                            abs($newGrandTotal - $oldGrandTotal)
                         );
 
                         session()->flash('info', 'PO Change Order ' . $pco->poco_number . ' created and submitted for approval.');
@@ -368,10 +391,19 @@ class PurchaseOrderController extends Controller
                 }
 
                 $purchaseOrder->update([
-                    'porder_total' => $total,
-                    'porder_tax' => $tax,
-                    'porder_grand_total' => $newGrandTotal,
+                    'porder_total_amount' => $total,
+                    'porder_total_tax' => $tax,
+                    'porder_total_item' => count($request->items),
+                    'porder_change_orders_total' => $newGrandTotal - $originalTotal,
                 ]);
+            }
+
+            if ($request->filled('remove_attachment_ids')) {
+                $this->removeAttachments($purchaseOrder, $request->remove_attachment_ids);
+            }
+
+            if ($request->hasFile('attachments')) {
+                $this->storeAttachments($purchaseOrder, $request->file('attachments'));
             }
 
             DB::commit();
@@ -395,8 +427,16 @@ class PurchaseOrderController extends Controller
 
         DB::beginTransaction();
         try {
+            $attachments = PurchaseOrderAttachment::where('po_attachment_porder_ms', $id)->get();
+            foreach ($attachments as $attachment) {
+                if (!empty($attachment->po_attachment_path)) {
+                    Storage::disk('public')->delete($attachment->po_attachment_path);
+                }
+            }
+            PurchaseOrderAttachment::where('po_attachment_porder_ms', $id)->delete();
+
             // Delete items first (Eloquent automatically applies company scope)
-            PurchaseOrderItem::where('porder_item_porder_ms', $id)->delete();
+            PurchaseOrderItem::where('po_detail_porder_ms', $id)->delete();
 
             $purchaseOrder->delete();
 
@@ -416,7 +456,6 @@ class PurchaseOrderController extends Controller
     public function getItemMasterList(Request $request)
     {
         $query = Item::active()
-            ->nonRentable()
             ->with(['category', 'costCode']);
 
         if ($request->filled('category')) {
@@ -458,7 +497,6 @@ class PurchaseOrderController extends Controller
             ->join('item_category_tab as ic', 'ic.icat_id', '=', 'im.item_cat_ms')
             ->join('cost_code_master as cc', 'cc.cc_id', '=', 'im.item_ccode_ms')
             ->where('im.item_status', 1)
-            ->where('im.item_is_rentable', 0)
             ->where('im.company_id', $companyId)
             ->where('sc.company_id', $companyId);
 
@@ -506,9 +544,6 @@ class PurchaseOrderController extends Controller
             return response()->json([
                 'success' => true,
                 'address' => $project->proj_address,
-                'city' => $project->proj_city,
-                'state' => $project->proj_state,
-                'zip' => $project->proj_zip,
             ]);
         }
 
@@ -523,12 +558,34 @@ class PurchaseOrderController extends Controller
         $purchaseOrder = PurchaseOrder::findOrFail($id);
         
         $purchaseOrder->update([
-            'porder_general_status' => $request->status,
-            'porder_modified_by' => Auth::id(),
-            'porder_modified_at' => now(),
+            'porder_status' => $request->status,
+            'porder_modifyby' => Auth::id(),
+            'porder_modifydate' => now(),
         ]);
 
         return response()->json(['success' => true, 'message' => 'Status updated successfully']);
+    }
+
+    /**
+     * Download an attachment for a purchase order.
+     */
+    public function downloadAttachment($id, $attachmentId)
+    {
+        $purchaseOrder = PurchaseOrder::findOrFail($id);
+        abort_unless($purchaseOrder->isOwnedByCurrentCompany(), 403, 'Unauthorized access');
+
+        $attachment = PurchaseOrderAttachment::where('po_attachment_porder_ms', $id)
+            ->where('po_attachment_id', $attachmentId)
+            ->firstOrFail();
+
+        if (!Storage::disk('public')->exists($attachment->po_attachment_path)) {
+            return back()->with('error', 'Attachment file not found on disk.');
+        }
+
+        return Storage::disk('public')->download(
+            $attachment->po_attachment_path,
+            $attachment->po_attachment_original_name
+        );
     }
 
     /**
@@ -596,6 +653,49 @@ class PurchaseOrderController extends Controller
                 'success' => false,
                 'message' => 'Error checking budget: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Persist uploaded files as purchase order attachments.
+     */
+    private function storeAttachments(PurchaseOrder $purchaseOrder, array $files): void
+    {
+        foreach ($files as $file) {
+            $storedPath = $file->storeAs(
+                'purchase-orders/' . $purchaseOrder->porder_id,
+                Str::random(10) . '_' . $file->getClientOriginalName(),
+                'public'
+            );
+
+            PurchaseOrderAttachment::create([
+                'po_attachment_porder_ms' => $purchaseOrder->porder_id,
+                'po_attachment_original_name' => $file->getClientOriginalName(),
+                'po_attachment_path' => $storedPath,
+                'po_attachment_mime' => $file->getClientMimeType(),
+                'po_attachment_size' => $file->getSize(),
+                'po_attachment_createby' => Auth::id(),
+                'po_attachment_createdate' => now(),
+                'po_attachment_status' => 1,
+            ]);
+        }
+    }
+
+    /**
+     * Remove selected attachments from storage and database.
+     */
+    private function removeAttachments(PurchaseOrder $purchaseOrder, array $attachmentIds): void
+    {
+        $attachments = PurchaseOrderAttachment::where('po_attachment_porder_ms', $purchaseOrder->porder_id)
+            ->whereIn('po_attachment_id', $attachmentIds)
+            ->get();
+
+        foreach ($attachments as $attachment) {
+            if (!empty($attachment->po_attachment_path)) {
+                Storage::disk('public')->delete($attachment->po_attachment_path);
+            }
+
+            $attachment->delete();
         }
     }
 }

@@ -6,6 +6,7 @@
 <h4 class="mb-3">Record Checklist</h4>
 <div class="card">
     <div class="card-body">
+        @include('partials.validation-errors')
         <form method="POST" action="{{ route('admin.performchecklists.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="row g-3">

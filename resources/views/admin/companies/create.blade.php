@@ -54,14 +54,14 @@
                         </div>
 
                         <div class="form-group">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" 
-                                       class="custom-control-input" 
-                                       id="status" 
-                                       name="status" 
-                                       value="1" 
+                            <div class="form-check">
+                                <input type="checkbox"
+                                       class="form-check-input"
+                                       id="status"
+                                       name="status"
+                                       value="1"
                                        checked>
-                                <label class="custom-control-label" for="status">Active</label>
+                                <label class="form-check-label" for="status">Active</label>
                             </div>
                         </div>
 

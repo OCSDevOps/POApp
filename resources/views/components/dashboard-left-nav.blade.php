@@ -201,10 +201,10 @@
                             <a href="apps-projects-details.html">Details</a>
                         </li>
                         <li>
-                            <a href="apps-projects-gantt.html">Gantt <span class="badge rounded-pill badge-light-lighten font-10 float-end">New</span></a>
+                            <a href="apps-projects-gantt.html">Gantt <span class="badge rounded-pill bg-light font-10 float-end">New</span></a>
                         </li>
                         <li>
-                            <a href="apps-projects-add.html">Create Project <span class="badge rounded-pill badge-success-lighten font-10 float-end">New</span></a>
+                            <a href="apps-projects-add.html">Create Project <span class="badge rounded-pill bg-success font-10 float-end">New</span></a>
                         </li>
                     </ul>
                 </div>

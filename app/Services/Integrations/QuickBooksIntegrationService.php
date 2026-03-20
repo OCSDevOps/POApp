@@ -386,7 +386,7 @@ class QuickBooksIntegrationService extends BaseIntegrationService
             'TxnDate' => $po->porder_order_date,
             'DueDate' => $po->porder_required_date,
             'DocNumber' => $po->porder_no,
-            'PrivateNote' => $po->porder_notes,
+            'PrivateNote' => $po->porder_description,
             'Line' => $po->items->map(function ($item) {
                 return [
                     'DetailType' => 'AccountBasedExpenseLineDetail',
@@ -411,17 +411,11 @@ class QuickBooksIntegrationService extends BaseIntegrationService
             'PrimaryPhone' => [
                 'FreeFormNumber' => $supplier->sup_phone,
             ],
-            'Mobile' => [
-                'FreeFormNumber' => $supplier->sup_mobile,
-            ],
             'PrimaryEmailAddr' => [
                 'Address' => $supplier->sup_email,
             ],
             'BillAddr' => [
                 'Line1' => $supplier->sup_address,
-                'City' => $supplier->sup_city,
-                'PostalCode' => $supplier->sup_zip,
-                'Country' => $supplier->sup_country,
             ],
         ];
     }

@@ -55,12 +55,11 @@ abstract class BaseIntegrationService
     /**
      * Start a sync log entry.
      */
-    protected function startSyncLog(string $syncType, string $operation, ?string $entityType = null, ?int $entityId = null): IntegrationSyncLog
+    protected function startSyncLog(string $entityType, string $operation, ?string $entityModelType = null, ?int $entityId = null): IntegrationSyncLog
     {
         $this->currentLog = IntegrationSyncLog::create([
             'integration_id' => $this->integration->id,
             'company_id' => $this->integration->company_id,
-            'sync_type' => $syncType,
             'operation' => $operation,
             'status' => 'pending',
             'entity_type' => $entityType,
@@ -174,8 +173,8 @@ abstract class BaseIntegrationService
 
         $mapped = [];
         foreach ($mappings as $mapping) {
-            if (isset($data[$mapping->internal_field])) {
-                $value = $data[$mapping->internal_field];
+            if (isset($data[$mapping->local_field])) {
+                $value = $data[$mapping->local_field];
                 $transformedValue = $mapping->transform($value);
                 $mapped[$mapping->external_field] = $transformedValue;
             }
@@ -183,7 +182,7 @@ abstract class BaseIntegrationService
 
         // Include unmapped fields
         foreach ($data as $key => $value) {
-            if (!$mappings->where('internal_field', $key)->count()) {
+            if (!$mappings->where('local_field', $key)->count()) {
                 $mapped[$key] = $value;
             }
         }
