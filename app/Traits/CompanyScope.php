@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Models\Scopes\CompanyScope as ModelCompanyScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,12 +18,8 @@ trait CompanyScope
      */
     protected static function bootCompanyScope()
     {
-        // Add global scope to filter queries by company_id
-        static::addGlobalScope('company', function (Builder $builder) {
-            if (session()->has('company_id')) {
-                $builder->where($builder->getModel()->getTable() . '.company_id', session('company_id'));
-            }
-        });
+        // Add a class-based global scope so it can be disabled consistently.
+        static::addGlobalScope(new ModelCompanyScope());
 
         // Auto-inject company_id when creating new records
         static::creating(function (Model $model) {
@@ -56,7 +53,7 @@ trait CompanyScope
      */
     public function scopeAllCompanies(Builder $query): Builder
     {
-        return $query->withoutGlobalScope('company');
+        return $query->withoutGlobalScope(ModelCompanyScope::class);
     }
 
     /**

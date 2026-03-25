@@ -100,7 +100,7 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td>
-                                        <a href="{{ route('admin.contracts.show', $contract->id) }}">
+                                        <a href="{{ route('admin.contracts.show', $contract->contract_id) }}">
                                             <strong>{{ $contract->contract_number }}</strong>
                                         </a>
                                     </td>
@@ -138,13 +138,13 @@
                                     <td>{{ $contract->start_date ? \Carbon\Carbon::parse($contract->start_date)->format('m/d/Y') : '—' }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('admin.contracts.show', $contract->id) }}" class="btn btn-info" title="View">
+                                            <a href="{{ route('admin.contracts.show', $contract->contract_id) }}" class="btn btn-info" title="View">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('admin.contracts.edit', $contract->id) }}" class="btn btn-primary" title="Edit">
+                                            <a href="{{ route('admin.contracts.edit', $contract->contract_id) }}" class="btn btn-primary" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form method="POST" action="{{ route('admin.contracts.destroy', $contract->id) }}"
+                                            <form method="POST" action="{{ route('admin.contracts.destroy', $contract->contract_id) }}"
                                                   class="d-inline" onsubmit="return confirm('Are you sure you want to delete this contract?');">
                                                 @csrf
                                                 @method('DELETE')

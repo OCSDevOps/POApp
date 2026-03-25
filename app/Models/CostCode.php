@@ -149,8 +149,8 @@ class CostCode extends Model
         $costCodeIds = collect([$this->cc_id]);
         $costCodeIds = $costCodeIds->merge($this->descendants()->pluck('cc_id'));
         
-        return Budget::whereIn('budget_cc_ms', $costCodeIds)
-            ->where('budget_project_ms', $projectId)
+        return Budget::whereIn('budget_cost_code_id', $costCodeIds)
+            ->where('budget_project_id', $projectId)
             ->selectRaw('
                 SUM(budget_amount) as total_budget,
                 SUM(budget_committed) as total_committed,

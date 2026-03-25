@@ -8,11 +8,11 @@ use App\Models\User;
 use App\Models\Project;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class MultiTenancyIsolationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected $company1;
     protected $company2;
@@ -218,7 +218,7 @@ class MultiTenancyIsolationTest extends TestCase
         $this->assertCount(1, $scopedProjects);
 
         // Without scope (super admin queries)
-        $allProjects = Project::withoutGlobalScope('company')->get();
+        $allProjects = Project::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)->get();
         $this->assertCount(2, $allProjects);
     }
 

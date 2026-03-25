@@ -65,6 +65,16 @@ class Budget extends Model
         'variance' => 'decimal:2',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $budget) {
+            $budget->budget_remaining_amount =
+                (float) $budget->budget_revised_amount
+                - (float) $budget->budget_committed_amount
+                - (float) $budget->budget_spent_amount;
+        });
+    }
+
     /**
      * Get the project for this budget.
      */
@@ -102,7 +112,10 @@ class Budget extends Model
      */
     public function getUtilizationPercentAttribute()
     {
-        if ($this->budget_revised_amount == 0) return 0;
+        if ($this->budget_revised_amount == 0) {
+            return 0;
+        }
+
         return round((($this->budget_committed_amount + $this->budget_spent_amount) / $this->budget_revised_amount) * 100, 2);
     }
 
@@ -184,6 +197,10 @@ class Budget extends Model
      */
     public function spend($amount, $userId = null)
     {
+        $amount = (float) $amount;
+
+        // Move as much as possible from open commitments into actual cost.
+        $this->budget_committed_amount = max(0, (float) $this->budget_committed_amount - $amount);
         $this->budget_spent_amount += $amount;
         $this->budget_modified_by = $userId ?? auth()->id();
         $this->budget_modified_at = now();
@@ -197,7 +214,7 @@ class Budget extends Model
      */
     public function releaseCommitment($amount, $userId = null)
     {
-        $this->budget_committed_amount = max(0, $this->budget_committed_amount - $amount);
+        $this->budget_committed_amount = max(0, (float) $this->budget_committed_amount - (float) $amount);
         $this->budget_modified_by = $userId ?? auth()->id();
         $this->budget_modified_at = now();
         $this->save();
@@ -211,11 +228,18 @@ class Budget extends Model
     public static function getBudgetFor($projectId, $costCodeId, $fiscalYear = null)
     {
         $fiscalYear = $fiscalYear ?? date('Y');
-        
-        return self::where('budget_project_id', $projectId)
+
+        $query = self::where('budget_project_id', $projectId)
             ->where('budget_cost_code_id', $costCodeId)
-            ->where('budget_fiscal_year', $fiscalYear)
-            ->where('budget_status', 1)
+            ->where('budget_status', 1);
+
+        $query->where(function ($budgetQuery) use ($fiscalYear) {
+            $budgetQuery->where('budget_fiscal_year', $fiscalYear)
+                ->orWhereNull('budget_fiscal_year');
+        });
+
+        return $query
+            ->orderByRaw('CASE WHEN budget_fiscal_year = ? THEN 0 ELSE 1 END', [$fiscalYear])
             ->first();
     }
 }

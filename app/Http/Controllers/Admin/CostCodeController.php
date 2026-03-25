@@ -7,6 +7,7 @@ use App\Models\CostCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CostCodeController extends Controller
 {
@@ -70,7 +71,7 @@ class CostCodeController extends Controller
     {
         $companyId = session('company_id');
         $canDelete = DB::table('purchase_order_details')
-                ->where('po_detail_taxcode', $costcode->cc_id)
+                ->where('po_detail_ccode', $costcode->cc_id)
                 ->where('company_id', $companyId)
                 ->doesntExist()
             && DB::table('budget_master')
@@ -92,16 +93,28 @@ class CostCodeController extends Controller
      */
     public function hierarchy()
     {
-        // Get all cost codes organized by hierarchy
-        $rootCodes = CostCode::whereNull('parent_code')
-            ->orWhere('parent_code', '')
-            ->orderBy('full_code')
+        $rootCodes = CostCode::active()
+            ->parents()
+            ->orderByRaw('COALESCE(cc_full_code, cc_no) asc')
             ->get();
 
-        // Build hierarchy tree
         $hierarchy = $this->buildHierarchyTree($rootCodes);
+        $standardSections = [
+            ['code' => '1-00-00', 'description' => 'Land'],
+            ['code' => '2-00-00', 'description' => 'Hard Construction Costs'],
+            ['code' => '3-00-00', 'description' => 'Soft Construction Costs'],
+            ['code' => '4-00-00', 'description' => 'Sales & Marketing'],
+            ['code' => '5-00-00', 'description' => 'Contingencies'],
+        ];
+        $standardExamples = [
+            ['code' => '2-01-00', 'description' => 'General Conditions'],
+            ['code' => '2-03-00', 'description' => 'Concrete'],
+            ['code' => '2-03-30', 'description' => 'Concrete Supply'],
+            ['code' => '2-05-10', 'description' => 'Structural Steel Frame'],
+            ['code' => '2-16-10', 'description' => 'Electrical Work'],
+        ];
 
-        return view('admin.costcodes.hierarchy', compact('hierarchy', 'rootCodes'));
+        return view('admin.costcodes.hierarchy', compact('hierarchy', 'rootCodes', 'standardSections', 'standardExamples'));
     }
 
     /**
@@ -109,47 +122,72 @@ class CostCodeController extends Controller
      */
     public function storeHierarchical(Request $request)
     {
-        $validated = $request->validate([
-            'category_code' => 'required|string|max:10',
-            'subcategory_code' => 'nullable|string|max:10',
-            'detail_code' => 'nullable|string|max:10',
-            'description' => 'required|string|max:500',
-            'parent_code' => 'nullable|string|max:50',
-        ]);
+        $payload = $this->validateHierarchyPayload($request);
+        $attributes = $this->buildHierarchyAttributes($payload);
 
-        // Build full code (XX-XX-XX format)
-        $fullCode = $validated['category_code'];
-        $level = 1;
-
-        if (!empty($validated['subcategory_code'])) {
-            $fullCode .= '-' . $validated['subcategory_code'];
-            $level = 2;
+        if (CostCode::where('cc_full_code', $attributes['cc_full_code'])->exists()) {
+            return back()->withInput()->with('error', 'Cost code already exists: ' . $attributes['cc_full_code']);
         }
 
-        if (!empty($validated['detail_code'])) {
-            $fullCode .= '-' . $validated['detail_code'];
-            $level = 3;
-        }
-
-        // Check if code already exists
-        if (CostCode::where('full_code', $fullCode)->exists()) {
-            return back()->withInput()->with('error', 'Cost code already exists: ' . $fullCode);
-        }
-
-        CostCode::create([
-            'cc_no' => $fullCode,
-            'cc_description' => trim($validated['description']),
-            'parent_code' => $validated['parent_code'] ?? null,
-            'category_code' => $validated['category_code'],
-            'subcategory_code' => $validated['subcategory_code'] ?? null,
-            'full_code' => $fullCode,
-            'level' => $level,
-            'cc_status' => 1,
+        CostCode::create($attributes + [
+            'cc_status' => (int) $payload['cc_status'],
             'cc_createdate' => Carbon::now(),
             'cc_createby' => auth()->id(),
         ]);
 
-        return back()->with('success', 'Hierarchical cost code created: ' . $fullCode);
+        return back()->with('success', 'Hierarchical cost code created: ' . $attributes['cc_full_code']);
+    }
+
+    /**
+     * Update a hierarchical cost code and cascade segment changes to descendants.
+     */
+    public function updateHierarchical(Request $request, CostCode $costcode)
+    {
+        $payload = $this->validateHierarchyPayload($request, $costcode);
+        $attributes = $this->buildHierarchyAttributes($payload);
+
+        DB::transaction(function () use ($costcode, $attributes, $payload) {
+            $descendants = $costcode->descendants()->keyBy('cc_id');
+
+            $this->assertHierarchyCodeIsAvailable(
+                $attributes['cc_full_code'],
+                array_merge([$costcode->cc_id], $descendants->keys()->all())
+            );
+
+            $this->assertDescendantCodesAreAvailable($costcode, $attributes, $descendants);
+
+            $costcode->update($attributes + [
+                'cc_status' => (int) $payload['cc_status'],
+                'cc_modifydate' => Carbon::now(),
+                'cc_modifyby' => auth()->id(),
+            ]);
+
+            if ((int) $costcode->cc_level === CostCode::LEVEL_PARENT) {
+                foreach ($descendants as $descendant) {
+                    $segments = $this->segmentsFor($descendant);
+                    $this->updateCodeRecord($descendant, [
+                        'segment_1' => $attributes['cc_parent_code'],
+                        'segment_2' => $segments['segment_2'],
+                        'segment_3' => $segments['segment_3'],
+                        'level' => $descendant->cc_level,
+                    ]);
+                }
+            }
+
+            if ((int) $costcode->cc_level === CostCode::LEVEL_CATEGORY) {
+                foreach ($descendants->where('cc_level', CostCode::LEVEL_SUBCATEGORY) as $descendant) {
+                    $segments = $this->segmentsFor($descendant);
+                    $this->updateCodeRecord($descendant, [
+                        'segment_1' => $attributes['cc_parent_code'],
+                        'segment_2' => $attributes['cc_category_code'],
+                        'segment_3' => $segments['segment_3'],
+                        'level' => $descendant->cc_level,
+                    ]);
+                }
+            }
+        });
+
+        return back()->with('success', 'Hierarchical cost code updated: ' . $attributes['cc_full_code']);
     }
 
     /**
@@ -157,17 +195,21 @@ class CostCodeController extends Controller
      */
     public function getChildCodes($parentCode)
     {
-        $children = CostCode::where('parent_code', $parentCode)
-            ->orderBy('full_code')
-            ->get()
+        $parent = CostCode::where('cc_full_code', $parentCode)
+            ->orWhere('cc_no', $parentCode)
+            ->firstOrFail();
+
+        $children = $parent->children()
+            ->sortBy(fn (CostCode $code) => $code->cc_full_code ?? $code->cc_no)
+            ->values()
             ->map(function ($code) {
                 return [
                     'id' => $code->cc_id,
-                    'code' => $code->full_code,
+                    'code' => $code->cc_full_code ?? $code->cc_no,
                     'cc_no' => $code->cc_no,
                     'description' => $code->cc_description,
-                    'level' => $code->level,
-                    'has_children' => $code->children()->count() > 0,
+                    'level' => $code->cc_level,
+                    'has_children' => $code->children()->isNotEmpty(),
                 ];
             });
 
@@ -182,13 +224,209 @@ class CostCodeController extends Controller
         $tree = [];
 
         foreach ($codes as $code) {
-            $node = [
+            $children = $code->children()
+                ->sortBy(fn (CostCode $child) => $child->cc_full_code ?? $child->cc_no)
+                ->values();
+
+            $tree[] = [
                 'code' => $code,
-                'children' => $this->buildHierarchyTree($code->children),
+                'children' => $this->buildHierarchyTree($children),
             ];
-            $tree[] = $node;
         }
 
         return $tree;
+    }
+
+    protected function validateHierarchyPayload(Request $request, ?CostCode $costcode = null): array
+    {
+        $payload = $request->validate([
+            'level' => 'required|integer|in:1,2,3',
+            'segment_1' => ['required', 'string', 'max:2', 'regex:/^[A-Za-z0-9]+$/'],
+            'segment_2' => ['nullable', 'string', 'max:2', 'regex:/^[A-Za-z0-9]+$/'],
+            'segment_3' => ['nullable', 'string', 'max:2', 'regex:/^[A-Za-z0-9]+$/'],
+            'description' => 'required|string|max:500',
+            'cc_status' => 'nullable|boolean',
+        ]);
+
+        $payload['cc_status'] = (int) ($payload['cc_status'] ?? 1);
+        $payload['segment_1'] = strtoupper(trim($payload['segment_1']));
+        $payload['segment_2'] = isset($payload['segment_2']) ? strtoupper(trim($payload['segment_2'])) : null;
+        $payload['segment_3'] = isset($payload['segment_3']) ? strtoupper(trim($payload['segment_3'])) : null;
+
+        if ((int) $payload['level'] >= 2 && empty($payload['segment_2'])) {
+            throw ValidationException::withMessages(['segment_2' => 'Segment 2 is required for category and detail cost codes.']);
+        }
+
+        if ((int) $payload['level'] === 3 && empty($payload['segment_3'])) {
+            throw ValidationException::withMessages(['segment_3' => 'Segment 3 is required for detail cost codes.']);
+        }
+
+        if ((int) $payload['level'] === 2 && $payload['segment_2'] === '00') {
+            throw ValidationException::withMessages(['segment_2' => 'Segment 2 must be a non-zero category code.']);
+        }
+
+        if ((int) $payload['level'] === 3 && $payload['segment_3'] === '00') {
+            throw ValidationException::withMessages(['segment_3' => 'Segment 3 must be a non-zero detail code.']);
+        }
+
+        if ($costcode && (int) $payload['level'] !== (int) $costcode->cc_level) {
+            throw ValidationException::withMessages(['level' => 'Changing the hierarchy level of an existing cost code is not supported.']);
+        }
+
+        if ((int) $payload['level'] === 2) {
+            $rootExists = CostCode::active()
+                ->where('cc_level', CostCode::LEVEL_PARENT)
+                ->where('cc_parent_code', $payload['segment_1'])
+                ->when($costcode, fn ($query) => $query->where('cc_id', '!=', $costcode->cc_id))
+                ->exists();
+
+            if (! $rootExists) {
+                throw ValidationException::withMessages(['segment_1' => 'Create the top-level section before adding a category beneath it.']);
+            }
+        }
+
+        if ((int) $payload['level'] === 3) {
+            $categoryExists = CostCode::active()
+                ->where('cc_level', CostCode::LEVEL_CATEGORY)
+                ->where('cc_parent_code', $payload['segment_1'])
+                ->where('cc_category_code', str_pad($payload['segment_2'], 2, '0', STR_PAD_LEFT))
+                ->when($costcode, fn ($query) => $query->where('cc_id', '!=', $costcode->cc_id))
+                ->exists();
+
+            if (! $categoryExists) {
+                throw ValidationException::withMessages(['segment_2' => 'Create the category before adding a detail code beneath it.']);
+            }
+        }
+
+        return $payload;
+    }
+
+    protected function buildHierarchyAttributes(array $payload): array
+    {
+        $level = (int) $payload['level'];
+        $segment1 = $payload['segment_1'];
+        $segment2 = $level >= 2
+            ? str_pad($payload['segment_2'], 2, '0', STR_PAD_LEFT)
+            : '00';
+        $segment3 = $level === 3
+            ? str_pad($payload['segment_3'], 2, '0', STR_PAD_LEFT)
+            : '00';
+
+        $fullCode = $this->formatFullCode($segment1, $segment2, $segment3);
+
+        return [
+            'cc_no' => $fullCode,
+            'cc_description' => trim($payload['description']),
+            'cc_parent_code' => $segment1,
+            'cc_category_code' => $level >= 2 ? $segment2 : null,
+            'cc_subcategory_code' => $level === 3 ? $segment3 : null,
+            'cc_full_code' => $fullCode,
+            'cc_level' => $level,
+        ];
+    }
+
+    protected function segmentsFor(CostCode $costcode): array
+    {
+        $parts = array_pad(explode('-', $costcode->cc_full_code ?? $costcode->cc_no ?? ''), 3, '00');
+
+        if (! empty($costcode->cc_parent_code)) {
+            $parts[0] = $costcode->cc_parent_code;
+        }
+
+        if ((int) $costcode->cc_level >= CostCode::LEVEL_CATEGORY && ! empty($costcode->cc_category_code)) {
+            $parts[1] = $costcode->cc_category_code;
+        }
+
+        if ((int) $costcode->cc_level === CostCode::LEVEL_SUBCATEGORY && ! empty($costcode->cc_subcategory_code)) {
+            $parts[2] = $costcode->cc_subcategory_code;
+        }
+
+        if ((int) $costcode->cc_level === CostCode::LEVEL_PARENT) {
+            $parts[1] = '00';
+            $parts[2] = '00';
+        }
+
+        if ((int) $costcode->cc_level === CostCode::LEVEL_CATEGORY) {
+            $parts[2] = '00';
+        }
+
+        return [
+            'segment_1' => strtoupper($parts[0] ?: ''),
+            'segment_2' => strtoupper($parts[1] ?: '00'),
+            'segment_3' => strtoupper($parts[2] ?: '00'),
+        ];
+    }
+
+    protected function updateCodeRecord(CostCode $costcode, array $payload): void
+    {
+        $attributes = $this->buildHierarchyAttributes($payload + ['description' => $costcode->cc_description]);
+
+        $costcode->update($attributes + [
+            'cc_modifydate' => Carbon::now(),
+            'cc_modifyby' => auth()->id(),
+        ]);
+    }
+
+    protected function assertHierarchyCodeIsAvailable(string $fullCode, array $allowedIds = []): void
+    {
+        $query = CostCode::where('cc_full_code', $fullCode);
+
+        if (! empty($allowedIds)) {
+            $query->whereNotIn('cc_id', $allowedIds);
+        }
+
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'segment_1' => "Cost code {$fullCode} already exists.",
+            ]);
+        }
+    }
+
+    protected function assertDescendantCodesAreAvailable(CostCode $costcode, array $attributes, $descendants): void
+    {
+        $proposedCodes = [];
+
+        if ((int) $costcode->cc_level === CostCode::LEVEL_PARENT) {
+            foreach ($descendants as $descendant) {
+                $segments = $this->segmentsFor($descendant);
+                $proposedCodes[] = $this->formatFullCode(
+                    $attributes['cc_parent_code'],
+                    $segments['segment_2'],
+                    $segments['segment_3']
+                );
+            }
+        }
+
+        if ((int) $costcode->cc_level === CostCode::LEVEL_CATEGORY) {
+            foreach ($descendants->where('cc_level', CostCode::LEVEL_SUBCATEGORY) as $descendant) {
+                $segments = $this->segmentsFor($descendant);
+                $proposedCodes[] = $this->formatFullCode(
+                    $attributes['cc_parent_code'],
+                    $attributes['cc_category_code'],
+                    $segments['segment_3']
+                );
+            }
+        }
+
+        $proposedCodes = array_unique(array_filter($proposedCodes));
+        if (empty($proposedCodes)) {
+            return;
+        }
+
+        $conflicts = CostCode::whereIn('cc_full_code', $proposedCodes)
+            ->whereNotIn('cc_id', array_merge([$costcode->cc_id], $descendants->keys()->all()))
+            ->pluck('cc_full_code')
+            ->all();
+
+        if (! empty($conflicts)) {
+            throw ValidationException::withMessages([
+                'segment_1' => 'Updating this cost code would collide with existing descendant codes: ' . implode(', ', $conflicts),
+            ]);
+        }
+    }
+
+    protected function formatFullCode(string $segment1, string $segment2, string $segment3): string
+    {
+        return strtoupper(trim($segment1)) . '-' . strtoupper(trim($segment2)) . '-' . strtoupper(trim($segment3));
     }
 }

@@ -7,12 +7,12 @@ use App\Models\Project;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class MultiTenancyTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected $company1;
     protected $company2;

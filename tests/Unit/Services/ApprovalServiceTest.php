@@ -16,13 +16,13 @@ use App\Models\CostCode;
 use App\Models\ProjectRole;
 use App\Models\Company;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Notification;
 
 class ApprovalServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected ApprovalService $approvalService;
     protected Company $company;

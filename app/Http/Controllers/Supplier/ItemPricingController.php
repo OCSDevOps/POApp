@@ -53,11 +53,11 @@ class ItemPricingController extends Controller
         $supplierUser = Auth::guard('supplier')->user();
 
         $request->validate([
-            'item_id' => 'required|integer',
+            'item_id' => 'required|integer|exists:item_master,item_id',
             'unit_price' => 'required|numeric|min:0',
             'effective_from' => 'required|date',
             'effective_to' => 'nullable|date|after_or_equal:effective_from',
-            'project_id' => 'nullable|integer',
+            'project_id' => 'nullable|integer|exists:project_master,proj_id',
         ]);
 
         $this->pricingService->upsert([
@@ -99,13 +99,29 @@ class ItemPricingController extends Controller
                 if (count($data) < 4) {
                     continue;
                 }
+
+                if (! is_numeric($data[0])) {
+                    continue;
+                }
+
+                $itemId = (int) $data[0];
+                $projectId = $data[2] !== '' ? (int) $data[2] : null;
+
+                if (! Item::where('item_id', $itemId)->exists()) {
+                    continue;
+                }
+
+                if ($projectId && ! Project::where('proj_id', $projectId)->exists()) {
+                    continue;
+                }
+
                 $rows[] = [
-                    'item_id' => (int) $data[0],
+                    'item_id' => $itemId,
                     'supplier_id' => $supplierUser->supplier_id,
-                    'project_id' => $data[2] !== '' ? (int) $data[2] : null,
+                    'project_id' => $projectId,
                     'unit_price' => (float) $data[3],
-                    'effective_from' => $data[4] ?? now()->toDateString(),
-                    'effective_to' => $data[5] ?? null,
+                    'effective_from' => ! empty($data[4]) ? $data[4] : now()->toDateString(),
+                    'effective_to' => ! empty($data[5]) ? $data[5] : null,
                 ];
             }
             fclose($handle);

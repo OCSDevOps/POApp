@@ -7,88 +7,64 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
+     * Add company_id to a legacy table if it exists and does not already have it.
+     */
+    private function addCompanyColumn(string $tableName, string $afterColumn): void
+    {
+        if (!Schema::hasTable($tableName) || Schema::hasColumn($tableName, 'company_id')) {
+            return;
+        }
+
+        Schema::table($tableName, function (Blueprint $table) use ($afterColumn) {
+            $table->unsignedBigInteger('company_id')->nullable()->after($afterColumn);
+            $table->index('company_id');
+        });
+    }
+
+    /**
+     * Drop company_id from a legacy table if present.
+     */
+    private function dropCompanyColumn(string $tableName): void
+    {
+        if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, 'company_id')) {
+            return;
+        }
+
+        Schema::table($tableName, function (Blueprint $table) use ($tableName) {
+            try {
+                $table->dropForeign([$tableName . '_company_id_foreign']);
+            } catch (\Throwable $e) {
+                // Ignore when the FK was never created in this environment.
+            }
+
+            try {
+                $table->dropIndex([$tableName . '_company_id_index']);
+            } catch (\Throwable $e) {
+                // Ignore when the index name differs or was never created.
+            }
+
+            $table->dropColumn('company_id');
+        });
+    }
+
+    /**
      * Run the migrations.
      *
      * @return void
      */
     public function up()
     {
-        // Add company_id to users table
-        Schema::table('users', function (Blueprint $table) {
-            $table->unsignedBigInteger('company_id')->nullable()->after('id');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->index('company_id');
-        });
-
-        // Add company_id to projects
-        Schema::table('projects', function (Blueprint $table) {
-            $table->unsignedBigInteger('company_id')->nullable()->after('proj_id');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->index('company_id');
-        });
-
-        // Add company_id to suppliers
-        Schema::table('suppliers', function (Blueprint $table) {
-            $table->unsignedBigInteger('company_id')->nullable()->after('sup_id');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->index('company_id');
-        });
-
-        // Add company_id to purchase_order_master
-        Schema::table('purchase_order_master', function (Blueprint $table) {
-            $table->unsignedBigInteger('company_id')->nullable()->after('porder_id');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->index('company_id');
-        });
-
-        // Add company_id to items
-        Schema::table('items', function (Blueprint $table) {
-            $table->unsignedBigInteger('company_id')->nullable()->after('item_id');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->index('company_id');
-        });
-
-        // Add company_id to budgets
-        Schema::table('budgets', function (Blueprint $table) {
-            $table->unsignedBigInteger('company_id')->nullable()->after('budget_id');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->index('company_id');
-        });
-
-        // Add company_id to receive_order_master
-        Schema::table('receive_order_master', function (Blueprint $table) {
-            $table->unsignedBigInteger('company_id')->nullable()->after('rorder_id');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->index('company_id');
-        });
-
-        // Add company_id to item_categories
-        Schema::table('item_categories', function (Blueprint $table) {
-            $table->unsignedBigInteger('company_id')->nullable()->after('icat_id');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->index('company_id');
-        });
-
-        // Add company_id to cost_codes
-        Schema::table('cost_codes', function (Blueprint $table) {
-            $table->unsignedBigInteger('company_id')->nullable()->after('cc_id');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->index('company_id');
-        });
-
-        // Add company_id to checklists
-        Schema::table('checklists', function (Blueprint $table) {
-            $table->unsignedBigInteger('company_id')->nullable()->after('id');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->index('company_id');
-        });
-
-        // Add company_id to equipment
-        Schema::table('equipment', function (Blueprint $table) {
-            $table->unsignedBigInteger('company_id')->nullable()->after('equip_id');
-            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
-            $table->index('company_id');
-        });
+        $this->addCompanyColumn('users', 'id');
+        $this->addCompanyColumn('project_master', 'proj_id');
+        $this->addCompanyColumn('supplier_master', 'sup_id');
+        $this->addCompanyColumn('purchase_order_master', 'porder_id');
+        $this->addCompanyColumn('item_master', 'item_id');
+        $this->addCompanyColumn('budget_master', 'budget_id');
+        $this->addCompanyColumn('receive_order_master', 'rorder_id');
+        $this->addCompanyColumn('item_category_tab', 'icat_id');
+        $this->addCompanyColumn('cost_code_master', 'cc_id');
+        $this->addCompanyColumn('checklist_master', 'cl_id');
+        $this->addCompanyColumn('eq_master', 'eq_id');
     }
 
     /**
@@ -98,27 +74,22 @@ return new class extends Migration
      */
     public function down()
     {
-        // Remove foreign keys and columns in reverse order
         $tables = [
-            'equipment',
-            'checklists',
-            'cost_codes',
-            'item_categories',
+            'eq_master',
+            'checklist_master',
+            'cost_code_master',
+            'item_category_tab',
             'receive_order_master',
-            'budgets',
-            'items',
+            'budget_master',
+            'item_master',
             'purchase_order_master',
-            'suppliers',
-            'projects',
-            'users'
+            'supplier_master',
+            'project_master',
+            'users',
         ];
 
-        foreach ($tables as $table) {
-            Schema::table($table, function (Blueprint $table) {
-                $table->dropForeign([$table . '_company_id_foreign']);
-                $table->dropIndex([$table . '_company_id_index']);
-                $table->dropColumn('company_id');
-            });
+        foreach ($tables as $tableName) {
+            $this->dropCompanyColumn($tableName);
         }
     }
 };

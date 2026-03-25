@@ -23,6 +23,7 @@ class RfqSupplier extends Model
     protected $fillable = [
         'rfqs_rfq_id',
         'rfqs_supplier_id',
+        'company_id',
         'rfqs_sent_date',
         'rfqs_response_date',
         'rfqs_status',

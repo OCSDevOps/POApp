@@ -17,10 +17,8 @@ yarn-error.log
 /.idea
 /.vscode
 /storage/framework/views/*.php
-/storage/framework/cache/data/
+/storage/framework/cache/data/*
 /public/run_migrate.php
-check_users.php
-test_artisan.php
-test_boot.php
-test_db.php
-serve.php
+.DS_Store
+art.log
+cookies.txt

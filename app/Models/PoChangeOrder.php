@@ -66,7 +66,7 @@ class PoChangeOrder extends Model
      */
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by', 'user_id');
+        return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
     /**
@@ -74,7 +74,7 @@ class PoChangeOrder extends Model
      */
     public function approver()
     {
-        return $this->belongsTo(User::class, 'approved_by', 'user_id');
+        return $this->belongsTo(User::class, 'approved_by', 'id');
     }
 
     /**
@@ -82,8 +82,7 @@ class PoChangeOrder extends Model
      */
     public function approvalRequest()
     {
-        return $this->hasOne(ApprovalRequest::class, 'entity_id', 'poco_id')
-            ->where('request_type', 'po_co');
+        return $this->morphOne(ApprovalRequest::class, 'approvable');
     }
 
     /**

@@ -78,30 +78,48 @@ class PoChangeOrderController extends Controller
      */
     public function store(Request $request, $poId)
     {
-        $request->validate([
-            'poco_type' => 'required|in:amount_change,item_change,date_change,other',
+        $validated = $request->validate([
+            'poco_type' => 'required|in:amount_change,item_change,date_change,term_change,other',
             'new_total' => 'required|numeric|min:0',
             'reason' => 'required|string|max:1000',
-            'details' => 'nullable|array',
+            'details' => 'nullable|string',
         ]);
 
         try {
-            $result = $this->poChangeOrderService->createPoChangeOrder(
-                $poId,
-                $request->new_total,
-                $request->poco_type,
-                $request->reason,
-                session('user_id'),
-                $request->details
-            );
+            $purchaseOrder = PurchaseOrder::findOrFail($poId);
+            $changeAmount = round((float) $validated['new_total'] - (float) $purchaseOrder->porder_total_amount, 2);
+            $details = null;
+
+            if (!empty($validated['details'])) {
+                $decodedDetails = json_decode($validated['details'], true);
+                $details = is_array($decodedDetails) ? $decodedDetails : null;
+            }
+
+            if ($changeAmount > 0) {
+                $budgetValidation = $this->poChangeOrderService->validatePoChangeOrder($poId, $changeAmount);
+                if (!$budgetValidation['valid']) {
+                    return back()
+                        ->withInput()
+                        ->with('error', $budgetValidation['reason'] ?? 'Budget validation failed');
+                }
+            }
+
+            $result = $this->poChangeOrderService->createPoChangeOrder([
+                'purchase_order_id' => $poId,
+                'poco_type' => $validated['poco_type'],
+                'poco_amount' => $changeAmount,
+                'poco_description' => $validated['reason'],
+                'poco_details' => $details,
+                'created_by' => auth()->id() ?? session('user_id'),
+            ]);
 
             if ($result['success']) {
                 return redirect()
-                    ->route('admin.po-change-orders.show', $result['change_order']->poco_id)
+                    ->route('admin.po-change-orders.show', $result['poco']->poco_id)
                     ->with('success', 'PO change order created successfully');
             }
 
-            return back()->with('error', $result['message']);
+            return back()->withInput()->with('error', $result['error'] ?? 'Failed to create PO change order');
         } catch (\Exception $e) {
             Log::error('PCO creation failed', [
                 'po_id' => $poId,
@@ -127,16 +145,20 @@ class PoChangeOrderController extends Controller
         ])->findOrFail($id);
 
         // Get approval history if exists
-        $approvalHistory = null;
+        $approvalHistory = [];
         if ($changeOrder->approvalRequest) {
-            $approvalHistory = $this->approvalService->getApprovalHistory(
-                $changeOrder->approvalRequest->approval_request_id
-            );
+            $approvalData = $this->approvalService->getApprovalHistory('po_co', $changeOrder->poco_id);
+            $approvalHistory = $approvalData['history'] ?? [];
         }
+
+        $canApprove = $changeOrder->approvalRequest
+            && $changeOrder->approvalRequest->request_status === 'pending'
+            && (int) $changeOrder->approvalRequest->current_approver_id === (int) (auth()->id() ?? session('user_id'));
 
         return view('admin.po-change-orders.show', compact(
             'changeOrder',
-            'approvalHistory'
+            'approvalHistory',
+            'canApprove'
         ));
     }
 
@@ -155,11 +177,12 @@ class PoChangeOrderController extends Controller
             // Validate budget if amount is increasing
             if ($changeOrder->poco_amount > 0) {
                 $validation = $this->poChangeOrderService->validatePoChangeOrder(
-                    $changeOrder->poco_id
+                    $changeOrder->purchase_order_id,
+                    (float) $changeOrder->poco_amount
                 );
 
-                if (!$validation['valid'] && !$validation['can_override']) {
-                    return back()->with('error', $validation['message']);
+                if (!$validation['valid']) {
+                    return back()->with('error', $validation['reason'] ?? 'Budget validation failed');
                 }
             }
 
@@ -168,13 +191,12 @@ class PoChangeOrderController extends Controller
                 'po_co',
                 $changeOrder->poco_id,
                 abs($changeOrder->poco_amount),
-                session('user_id'),
+                auth()->id() ?? session('user_id'),
                 $changeOrder->purchaseOrder->porder_project_ms
             );
 
             if ($result['success']) {
                 $changeOrder->poco_status = 'pending_approval';
-                $changeOrder->submitted_at = now();
                 $changeOrder->save();
 
                 return redirect()
@@ -210,10 +232,10 @@ class PoChangeOrderController extends Controller
 
         try {
             $result = $this->approvalService->processApproval(
-                $changeOrder->approvalRequest->approval_request_id,
-                'approve',
-                session('user_id'),
-                session('user_name'),
+                $changeOrder->approvalRequest->request_id,
+                'approved',
+                auth()->id() ?? session('user_id'),
+                auth()->user()->name ?? session('user_name'),
                 $request->comments
             );
 
@@ -251,10 +273,10 @@ class PoChangeOrderController extends Controller
 
         try {
             $result = $this->approvalService->processApproval(
-                $changeOrder->approvalRequest->approval_request_id,
-                'reject',
-                session('user_id'),
-                session('user_name'),
+                $changeOrder->approvalRequest->request_id,
+                'rejected',
+                auth()->id() ?? session('user_id'),
+                auth()->user()->name ?? session('user_name'),
                 $request->comments
             );
 
@@ -309,7 +331,11 @@ class PoChangeOrderController extends Controller
     public function checkBudgetAvailability($id)
     {
         try {
-            $validation = $this->poChangeOrderService->validatePoChangeOrder($id);
+            $changeOrder = PoChangeOrder::findOrFail($id);
+            $validation = $this->poChangeOrderService->validatePoChangeOrder(
+                $changeOrder->purchase_order_id,
+                (float) $changeOrder->poco_amount
+            );
             
             return response()->json($validation);
         } catch (\Exception $e) {

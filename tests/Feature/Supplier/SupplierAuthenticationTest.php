@@ -5,13 +5,13 @@ namespace Tests\Feature\Supplier;
 use App\Models\Company;
 use App\Models\Supplier;
 use App\Models\SupplierUser;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class SupplierAuthenticationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected $company;
     protected $supplier;

@@ -10,6 +10,14 @@ class ApprovalRequest extends Model
     use CompanyScope;
     protected $table = 'approval_requests';
     protected $primaryKey = 'request_id';
+
+    /**
+     * Allow accessing request_id as alias for id.
+     */
+    public function getRequestIdAttribute()
+    {
+        return $this->attributes['request_id'] ?? $this->attributes['id'] ?? null;
+    }
     
     protected $fillable = [
         'company_id',

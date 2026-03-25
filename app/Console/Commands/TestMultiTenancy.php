@@ -101,11 +101,11 @@ class TestMultiTenancy extends Command
             // Temporarily set company context
             session(['company_id' => $company->id]);
 
-            $users = User::withoutGlobalScope('company')->where('company_id', $company->id)->count();
-            $projects = Project::withoutGlobalScope('company')->where('company_id', $company->id)->count();
-            $pos = PurchaseOrder::withoutGlobalScope('company')->where('company_id', $company->id)->count();
-            $suppliers = Supplier::withoutGlobalScope('company')->where('company_id', $company->id)->count();
-            $items = Item::withoutGlobalScope('company')->where('company_id', $company->id)->count();
+            $users = User::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)->where('company_id', $company->id)->count();
+            $projects = Project::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)->where('company_id', $company->id)->count();
+            $pos = PurchaseOrder::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)->where('company_id', $company->id)->count();
+            $suppliers = Supplier::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)->where('company_id', $company->id)->count();
+            $items = Item::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)->where('company_id', $company->id)->count();
 
             $this->line("  {$company->name} (ID: {$company->id}):");
             $this->line("    - Users: {$users}");
@@ -120,7 +120,7 @@ class TestMultiTenancy extends Command
         session(['company_id' => $company1->id]);
 
         $scopedCount = PurchaseOrder::count();
-        $unscopedCount = PurchaseOrder::withoutGlobalScope('company')->count();
+        $unscopedCount = PurchaseOrder::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)->count();
 
         if ($scopedCount <= $unscopedCount) {
             $this->info("  ✓ CompanyScope is working (Scoped: {$scopedCount}, Total: {$unscopedCount})");
@@ -185,7 +185,7 @@ class TestMultiTenancy extends Command
         session(['company_id' => $company1->id]);
 
         // Try to get company 2's data
-        $company2POs = PurchaseOrder::withoutGlobalScope('company')
+        $company2POs = PurchaseOrder::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)
             ->where('company_id', $company2->id)
             ->count();
 
@@ -198,7 +198,7 @@ class TestMultiTenancy extends Command
 
         if ($company2POs > 0) {
             $canAccessCompany2 = PurchaseOrder::whereIn('porder_id', 
-                PurchaseOrder::withoutGlobalScope('company')
+                PurchaseOrder::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)
                     ->where('company_id', $company2->id)
                     ->pluck('porder_id')
             )->count();

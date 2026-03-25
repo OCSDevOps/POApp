@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Attachment;
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -177,7 +178,7 @@ class FileAttachmentService
     public function deleteAttachment(int $attachmentId, bool $permanent = false): array
     {
         try {
-            $attachment = Attachment::findOrFail($attachmentId);
+            $attachment = Attachment::withoutGlobalScope(CompanyScope::class)->findOrFail($attachmentId);
 
             // Verify company ownership
             if ($attachment->company_id != session('company_id')) {

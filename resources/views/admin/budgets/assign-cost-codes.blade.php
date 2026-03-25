@@ -34,16 +34,38 @@
                         @csrf
 
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> Select cost codes to assign to this project. You can select entire categories or individual subcategories.
+                            <i class="fas fa-info-circle"></i> Select cost codes to assign to this project. You can select entire sections, categories, or individual detail codes.
                         </div>
 
-                        <div class="mb-3">
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="selectAll">
-                                <i class="fas fa-check-square"></i> Select All
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAll">
-                                <i class="fas fa-square"></i> Deselect All
-                            </button>
+                        <div class="row g-3 align-items-end mb-3">
+                            <div class="col-lg-7">
+                                @if($templates->isNotEmpty())
+                                    <label for="costCodeTemplate" class="form-label">Apply Seeded Tenant Template</label>
+                                    <div class="input-group">
+                                        <select class="form-select" id="costCodeTemplate">
+                                            <option value="">Choose a reusable template...</option>
+                                            @foreach($templates as $template)
+                                                <option value="{{ $template->cct_id }}">
+                                                    {{ $template->cct_name }} ({{ $template->items_count }} codes)
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <button type="button" class="btn btn-outline-primary" id="applyTemplate">
+                                            <i class="fas fa-layer-group"></i> Apply Template
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Includes the full March 2020 catalog plus section-based tenant template packs.</small>
+                                @endif
+                            </div>
+                            <div class="col-lg-5">
+                                <label class="form-label d-block">Quick Actions</label>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="selectAll">
+                                    <i class="fas fa-check-square"></i> Select All
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAll">
+                                    <i class="fas fa-square"></i> Deselect All
+                                </button>
+                            </div>
                         </div>
 
                         <div class="accordion" id="costCodeAccordion">
@@ -62,11 +84,13 @@
                                                 data-bs-target="#collapse{{ $parent->cc_id }}" aria-expanded="false">
                                             <div class="form-check me-3" onclick="event.stopPropagation();">
                                                 <input class="form-check-input parent-checkbox" type="checkbox" 
+                                                       name="cost_code_ids[]"
+                                                       value="{{ $parent->cc_id }}"
                                                        id="parent_{{ $parent->cc_id }}" 
                                                        data-parent="{{ $parent->cc_parent_code }}"
                                                        {{ in_array($parent->cc_id, $assignedCostCodeIds) ? 'checked' : '' }}>
                                             </div>
-                                            <strong>{{ $parent->cc_parent_code }}</strong> - {{ $parent->cc_description }}
+                                            <strong>{{ $parent->cc_full_code }}</strong> - {{ $parent->cc_description }}
                                             <span class="badge bg-secondary ms-2">{{ $categories->count() }} categories</span>
                                         </button>
                                     </h2>
@@ -100,7 +124,7 @@
                                                                                data-category="{{ $category->cc_category_code }}"
                                                                                {{ in_array($category->cc_id, $assignedCostCodeIds) ? 'checked' : '' }}>
                                                                         <label class="form-check-label fw-bold" for="category_{{ $category->cc_id }}">
-                                                                            {{ $category->cc_parent_code }}-{{ $category->cc_category_code }} - {{ $category->cc_description }}
+                                                                            {{ $category->cc_full_code }} - {{ $category->cc_description }}
                                                                         </label>
                                                                     </div>
 
@@ -153,6 +177,8 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    const templateEndpoint = @json(route('admin.costcode-templates.cost-codes', ['id' => '__template__']));
+
     // Select all
     $('#selectAll').click(function() {
         $('.form-check-input').prop('checked', true);
@@ -201,6 +227,10 @@ $(document).ready(function() {
         const checkedSubs = $(`.subcategory-checkbox[data-parent="${parent}"][data-category="${category}"]:checked`).length;
         
         const categoryCheckbox = $(`.category-checkbox[data-parent="${parent}"][data-category="${category}"]`);
+
+        if (totalSubs === 0) {
+            return;
+        }
         
         if (checkedSubs === 0) {
             categoryCheckbox.prop('checked', false);
@@ -221,6 +251,32 @@ $(document).ready(function() {
             parentCheckbox.prop('checked', true);
         }
     }
+
+    $('#applyTemplate').click(function() {
+        const templateId = $('#costCodeTemplate').val();
+
+        if (!templateId) {
+            return;
+        }
+
+        $.get(templateEndpoint.replace('__template__', templateId), function(items) {
+            const selectedIds = new Set(items.map(item => String(item.cc_id)));
+
+            $('.form-check-input').prop('checked', false);
+
+            $('input[name="cost_code_ids[]"]').each(function() {
+                $(this).prop('checked', selectedIds.has(String($(this).val())));
+            });
+
+            $('.category-checkbox').each(function() {
+                updateCategoryCheckbox($(this).data('parent'), $(this).data('category'));
+            });
+
+            $('.parent-checkbox').each(function() {
+                updateParentCheckbox($(this).data('parent'));
+            });
+        });
+    });
 });
 </script>
 @endpush

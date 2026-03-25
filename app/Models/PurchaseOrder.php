@@ -18,6 +18,7 @@ class PurchaseOrder extends Model
         'porder_no',
         'porder_project_ms',
         'porder_supplier_ms',
+        'porder_cost_code',
         'porder_address',
         'porder_delivery_note',
         'porder_description',

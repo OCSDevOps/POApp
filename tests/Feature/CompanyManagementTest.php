@@ -5,12 +5,12 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use App\Models\Company;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\WithFaker;
 
 class CompanyManagementTest extends TestCase
 {
-    use RefreshDatabase, WithFaker;
+    use DatabaseTransactions, WithFaker;
 
     protected $superAdmin;
     protected $regularUser;

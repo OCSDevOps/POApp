@@ -25,6 +25,7 @@ class PurchaseOrderItem extends Model
         'po_detail_subtotal',
         'po_detail_taxamount',
         'po_detail_total',
+        'po_detail_ccode',
         'po_detail_createdate',
         'po_detail_status',
         'po_detail_tax_group',

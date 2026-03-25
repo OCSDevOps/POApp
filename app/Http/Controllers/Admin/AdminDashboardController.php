@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\PurchaseOrder;
 use App\Models\Project;
 use App\Models\User;
@@ -112,11 +113,14 @@ class AdminDashboardController extends Controller
      */
     private function getUserDetails($uid)
     {
-        return DB::table('users')
-            ->leftJoin('master_user_type', 'master_user_type.mu_id', '=', 'users.u_type')
-            ->where('users.id', $uid)
-            ->select('users.*', 'master_user_type.mu_name')
-            ->first();
+        $query = DB::table('users')->where('users.id', $uid)->select('users.*');
+
+        if (Schema::hasTable('master_user_type')) {
+            $query->leftJoin('master_user_type', 'master_user_type.mu_id', '=', 'users.u_type')
+                ->addSelect('master_user_type.mu_name');
+        }
+
+        return $query->first();
     }
 
     /**

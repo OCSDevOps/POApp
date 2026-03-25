@@ -88,6 +88,8 @@ class BudgetService
             if (!$assignment) {
                 throw new \Exception('Cost code not assigned to this project');
             }
+
+            $project = $assignment->project ?? Project::find($projectId);
             
             // Find or create budget
             $budget = Budget::firstOrNew([
@@ -101,8 +103,9 @@ class BudgetService
                 $budget->budget_original_amount = $amount;
                 $budget->budget_committed_amount = 0;
                 $budget->budget_spent_amount = 0;
+                $budget->budget_remaining_amount = $amount;
                 $budget->budget_created_by = $userId;
-                $budget->company_id = session('company_id');
+                $budget->company_id = $assignment->company_id ?? session('company_id') ?? $project->company_id ?? null;
             } else {
                 // Existing budget - update via change order
                 return $this->createBudgetChangeOrder([
@@ -249,8 +252,8 @@ class BudgetService
                 'reason' => 'No budget found for this project and cost code',
             ];
         }
-        
-        $availableBudget = $budget->budget_revised_amount - $budget->budget_committed_amount;
+
+        $availableBudget = $budget->remaining_amount;
 
         if ($poAmount > $availableBudget) {
             return [
@@ -258,6 +261,7 @@ class BudgetService
                 'reason' => 'PO amount exceeds available budget',
                 'budget_amount' => $budget->budget_revised_amount,
                 'committed' => $budget->budget_committed_amount,
+                'spent' => $budget->budget_spent_amount,
                 'available' => $availableBudget,
                 'shortfall' => $poAmount - $availableBudget,
             ];
@@ -267,6 +271,7 @@ class BudgetService
             'valid' => true,
             'budget_amount' => $budget->budget_revised_amount,
             'committed' => $budget->budget_committed_amount,
+            'spent' => $budget->budget_spent_amount,
             'available' => $availableBudget,
             'remaining_after_po' => $availableBudget - $poAmount,
         ];
@@ -282,8 +287,11 @@ class BudgetService
             ->first();
         
         if ($budget) {
-            $budget->budget_committed_amount += $poAmount;
-            $budget->save();
+            if ($poAmount >= 0) {
+                $budget->commit($poAmount);
+            } else {
+                $budget->releaseCommitment(abs($poAmount));
+            }
 
             // Check budget thresholds and send warnings
             $this->checkBudgetThresholds($budget);
@@ -300,8 +308,7 @@ class BudgetService
             ->first();
 
         if ($budget) {
-            $budget->budget_spent_amount += $actualAmount;
-            $budget->save();
+            $budget->spend($actualAmount);
 
             // Check budget thresholds and send warnings
             $this->checkBudgetThresholds($budget);
@@ -389,18 +396,18 @@ class BudgetService
         
         foreach ($budgets as $budget) {
             $summary['budgets_by_cost_code'][] = [
-                'cost_code' => $budget->costCode->cc_code ?? 'N/A',
+                'cost_code' => $budget->costCode->cc_no ?? 'N/A',
                 'cost_code_name' => $budget->costCode->cc_description ?? 'N/A',
                 'original_budget' => $budget->budget_original_amount,
                 'current_budget' => $budget->budget_revised_amount,
                 'committed' => $budget->budget_committed_amount,
                 'actual' => $budget->budget_spent_amount,
-                'available' => $budget->budget_revised_amount - $budget->budget_committed_amount,
+                'available' => $budget->remaining_amount,
                 'variance' => $budget->budget_revised_amount - $budget->budget_spent_amount,
             ];
         }
         
-        $summary['total_available'] = $summary['total_budget'] - $summary['total_committed'];
+        $summary['total_available'] = $budgets->sum(fn (Budget $budget) => $budget->remaining_amount);
         $summary['total_variance'] = $summary['total_budget'] - $summary['total_actual'];
         
         return $summary;

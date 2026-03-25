@@ -10,8 +10,8 @@
                 <h5 class="card-title mb-2">Welcome, {{ auth('supplier')->user()->name ?? 'Supplier' }}!</h5>
                 <p class="text-muted mb-3">Use the supplier portal to view RFQs, submit quotes, and manage your catalog.</p>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="#" class="btn btn-outline-primary btn-sm disabled">RFQs (coming soon)</a>
-                    <a href="#" class="btn btn-outline-secondary btn-sm disabled">Catalog</a>
+                    <a href="{{ route('supplier.rfq.index') }}" class="btn btn-outline-primary btn-sm">RFQs</a>
+                    <a href="{{ route('supplier.pricing.index') }}" class="btn btn-outline-secondary btn-sm">Pricing</a>
                     <a href="{{ route('supplier.profile') }}" class="btn btn-primary btn-sm">Update Profile</a>
                 </div>
             </div>

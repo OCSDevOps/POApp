@@ -1,0 +1,1394 @@
+{
+  "version": "march-2020",
+  "source_title": "Standard Cost Code List",
+  "source_company": "Essence Properties Inc",
+  "source_document_date": "2020-03-06",
+  "source_local_reference": "C:\\Users\\OCS\\OneDrive - SYS Accounting\\Desktop\\Standrad Cost Code List As of March 2020.PDF",
+  "code_count": 346,
+  "codes": [
+    {
+      "code": "1-00-00",
+      "description": "LAND"
+    },
+    {
+      "code": "1-18-00",
+      "description": "LAND"
+    },
+    {
+      "code": "1-18-02",
+      "description": "Land Purchase"
+    },
+    {
+      "code": "1-18-03",
+      "description": "Conveyance Legal Expense"
+    },
+    {
+      "code": "1-18-04",
+      "description": "Real Estate Commission"
+    },
+    {
+      "code": "1-18-05",
+      "description": "Property Purchase Tax"
+    },
+    {
+      "code": "1-18-08",
+      "description": "Commitment Fee"
+    },
+    {
+      "code": "1-18-98",
+      "description": "Financing Fee Land"
+    },
+    {
+      "code": "1-18-99",
+      "description": "Land Interest"
+    },
+    {
+      "code": "2-00-00",
+      "description": "HARD CONSTRUCTION COSTS"
+    },
+    {
+      "code": "2-01-00",
+      "description": "GENERAL CONDITIONS"
+    },
+    {
+      "code": "2-01-01",
+      "description": "Construction Mgr & Supervision"
+    },
+    {
+      "code": "2-01-02",
+      "description": "Site Coordinator/CSO"
+    },
+    {
+      "code": "2-01-03",
+      "description": "Site Foreman"
+    },
+    {
+      "code": "2-01-04",
+      "description": "Project Coordinator"
+    },
+    {
+      "code": "2-01-05",
+      "description": "General Labour"
+    },
+    {
+      "code": "2-01-06",
+      "description": "First Aid & Safety- Material"
+    },
+    {
+      "code": "2-01-07",
+      "description": "Truck Allowance/Employee Travel"
+    },
+    {
+      "code": "2-01-08",
+      "description": "COC Insurance"
+    },
+    {
+      "code": "2-01-09",
+      "description": "Bonds"
+    },
+    {
+      "code": "2-01-10",
+      "description": "Testing"
+    },
+    {
+      "code": "2-01-11",
+      "description": "Site Office Equipment"
+    },
+    {
+      "code": "2-01-12",
+      "description": "Survey & Layout"
+    },
+    {
+      "code": "2-01-13",
+      "description": "Photographs & Drawings"
+    },
+    {
+      "code": "2-01-14",
+      "description": "Small Tools"
+    },
+    {
+      "code": "2-01-15",
+      "description": "Site Phone/Internet"
+    },
+    {
+      "code": "2-01-16",
+      "description": "Site Office Supplies"
+    },
+    {
+      "code": "2-01-17",
+      "description": "Site Consumables"
+    },
+    {
+      "code": "2-01-18",
+      "description": "Temporary Covered Walkway"
+    },
+    {
+      "code": "2-01-19",
+      "description": "Temporary Site Off/Storage Bin"
+    },
+    {
+      "code": "2-01-20",
+      "description": "Temporary Toilets"
+    },
+    {
+      "code": "2-01-21",
+      "description": "Temporary Power/Usage"
+    },
+    {
+      "code": "2-01-22",
+      "description": "Traffic Flagging"
+    },
+    {
+      "code": "2-01-23",
+      "description": "Temporary Heat & Gas"
+    },
+    {
+      "code": "2-01-24",
+      "description": "Temporary Lighting"
+    },
+    {
+      "code": "2-01-25",
+      "description": "Temporary Water"
+    },
+    {
+      "code": "2-01-26",
+      "description": "Hoarding & Barricades"
+    },
+    {
+      "code": "2-01-27",
+      "description": "Scaffolding & Staging"
+    },
+    {
+      "code": "2-01-28",
+      "description": "Material Protection"
+    },
+    {
+      "code": "2-01-29",
+      "description": "Weather Conditions"
+    },
+    {
+      "code": "2-01-30",
+      "description": "Misc Supplies&Equip Rentals"
+    },
+    {
+      "code": "2-01-31",
+      "description": "Rubbish Removal"
+    },
+    {
+      "code": "2-01-32",
+      "description": "Final Clean Up Incl Windows"
+    },
+    {
+      "code": "2-01-33",
+      "description": "Signs"
+    },
+    {
+      "code": "2-01-34",
+      "description": "Street Cleaning"
+    },
+    {
+      "code": "2-01-35",
+      "description": "Fire Safety Plan/Extinguishers"
+    },
+    {
+      "code": "2-01-36",
+      "description": "Security"
+    },
+    {
+      "code": "2-01-37",
+      "description": "Crane Rental"
+    },
+    {
+      "code": "2-01-39",
+      "description": "Hoist Rental"
+    },
+    {
+      "code": "2-01-40",
+      "description": "Machine Repairs/Maintenance"
+    },
+    {
+      "code": "2-01-44",
+      "description": "Deficiency Allowance"
+    },
+    {
+      "code": "2-01-45",
+      "description": "Fees, Permits& Licenses"
+    },
+    {
+      "code": "2-01-46",
+      "description": "Theft/Breakage"
+    },
+    {
+      "code": "2-01-95",
+      "description": "Fuel Cost"
+    },
+    {
+      "code": "2-01-96",
+      "description": "Onsite Elect Setup Transformer"
+    },
+    {
+      "code": "2-01-97",
+      "description": "BC Hydro/Telus Offsite Charges"
+    },
+    {
+      "code": "2-02-00",
+      "description": "SITE WORK"
+    },
+    {
+      "code": "2-02-10",
+      "description": "Demolition"
+    },
+    {
+      "code": "2-02-11",
+      "description": "Asbestos Removal"
+    },
+    {
+      "code": "2-02-15",
+      "description": "Clearing & Grubbing"
+    },
+    {
+      "code": "2-02-20",
+      "description": "Structural & Bulk Excavation"
+    },
+    {
+      "code": "2-02-21",
+      "description": "Blasting/Rocksplitting"
+    },
+    {
+      "code": "2-02-22",
+      "description": "Backfill"
+    },
+    {
+      "code": "2-02-23",
+      "description": "Interior slab Fill"
+    },
+    {
+      "code": "2-02-24",
+      "description": "Misc Aggregate"
+    },
+    {
+      "code": "2-02-25",
+      "description": "Detail Excavation"
+    },
+    {
+      "code": "2-02-26",
+      "description": "Trench Excavation & Fill"
+    },
+    {
+      "code": "2-02-28",
+      "description": "Site Grading"
+    },
+    {
+      "code": "2-02-30",
+      "description": "Pile Foundations"
+    },
+    {
+      "code": "2-02-40",
+      "description": "Lock Block Shoring"
+    },
+    {
+      "code": "2-02-41",
+      "description": "Shotcrete Shoring"
+    },
+    {
+      "code": "2-02-42",
+      "description": "Shotcrete Anchoring"
+    },
+    {
+      "code": "2-02-43",
+      "description": "Underpinning"
+    },
+    {
+      "code": "2-02-45",
+      "description": "Perimeter Drain Tile"
+    },
+    {
+      "code": "2-02-50",
+      "description": "ES &C Onsite&Offsite Bonding"
+    },
+    {
+      "code": "2-02-51",
+      "description": "ESC Filtration Tanks"
+    },
+    {
+      "code": "2-02-52",
+      "description": "Truck Wash Facility"
+    },
+    {
+      "code": "2-02-54",
+      "description": "Site Servicing Misc"
+    },
+    {
+      "code": "2-02-55",
+      "description": "Onsite Services"
+    },
+    {
+      "code": "2-02-56",
+      "description": "Offsite Services"
+    },
+    {
+      "code": "2-02-57",
+      "description": "Civil Work (Hydro/Tel/Cable)"
+    },
+    {
+      "code": "2-02-58",
+      "description": "Civil Maintenance"
+    },
+    {
+      "code": "2-02-71",
+      "description": "Fences & Gates"
+    },
+    {
+      "code": "2-02-75",
+      "description": "Retaining Walls"
+    },
+    {
+      "code": "2-02-80",
+      "description": "Landscaping (onsite)"
+    },
+    {
+      "code": "2-02-81",
+      "description": "Landscaping (offsite)"
+    },
+    {
+      "code": "2-02-85",
+      "description": "Hard Landscaping Materials"
+    },
+    {
+      "code": "2-02-86",
+      "description": "Site Furnishings"
+    },
+    {
+      "code": "2-02-87",
+      "description": "Playground Equipment"
+    },
+    {
+      "code": "2-02-90",
+      "description": "Irrigation"
+    },
+    {
+      "code": "2-02-91",
+      "description": "Landscape Maintenance"
+    },
+    {
+      "code": "2-03-00",
+      "description": "CONCRETE"
+    },
+    {
+      "code": "2-03-10",
+      "description": "Formwork Material"
+    },
+    {
+      "code": "2-03-11",
+      "description": "Formwork Labour"
+    },
+    {
+      "code": "2-03-12",
+      "description": "Suspended Slab Reshoring"
+    },
+    {
+      "code": "2-03-15",
+      "description": "Concrete Accessories"
+    },
+    {
+      "code": "2-03-20",
+      "description": "Concrete Reinforcing (rebar)"
+    },
+    {
+      "code": "2-03-30",
+      "description": "Concrete Supply"
+    },
+    {
+      "code": "2-03-31",
+      "description": "Concrete Pumping"
+    },
+    {
+      "code": "2-03-32",
+      "description": "Concrete Flatwork Forming/Prep"
+    },
+    {
+      "code": "2-03-33",
+      "description": "Concrete Placing/Finishing"
+    },
+    {
+      "code": "2-03-35",
+      "description": "Concrete Sacking & Grinding"
+    },
+    {
+      "code": "2-03-41",
+      "description": "Precast Systems"
+    },
+    {
+      "code": "2-03-42",
+      "description": "Pre & Post Tensioned Systems"
+    },
+    {
+      "code": "2-03-50",
+      "description": "Cementitious Flooring"
+    },
+    {
+      "code": "2-03-60",
+      "description": "Cutting and Coring"
+    },
+    {
+      "code": "2-03-70",
+      "description": "Architectural Concrete"
+    },
+    {
+      "code": "2-03-95",
+      "description": "House Keeping Pads"
+    },
+    {
+      "code": "2-04-00",
+      "description": "MASONRY"
+    },
+    {
+      "code": "2-04-20",
+      "description": "Concrete Block Masonry"
+    },
+    {
+      "code": "2-04-30",
+      "description": "Brick Masonry"
+    },
+    {
+      "code": "2-04-35",
+      "description": "Cultured Stone Masonry"
+    },
+    {
+      "code": "2-04-40",
+      "description": "Glass Block Masonry"
+    },
+    {
+      "code": "2-04-98",
+      "description": "Brick Angle"
+    },
+    {
+      "code": "2-05-00",
+      "description": "METALS"
+    },
+    {
+      "code": "2-05-10",
+      "description": "Structural Steel Frame"
+    },
+    {
+      "code": "2-05-15",
+      "description": "Metal Decking"
+    },
+    {
+      "code": "2-05-16",
+      "description": "Hambro Floor System"
+    },
+    {
+      "code": "2-05-20",
+      "description": "Wind-load Bearing Steel Studs"
+    },
+    {
+      "code": "2-05-30",
+      "description": "Metal Furring Channel"
+    },
+    {
+      "code": "2-05-40",
+      "description": "Sheet Metal"
+    },
+    {
+      "code": "2-05-50",
+      "description": "Metal Fabrications/Misc Metals"
+    },
+    {
+      "code": "2-05-65",
+      "description": "Embeds"
+    },
+    {
+      "code": "2-05-70",
+      "description": "Metal Railings"
+    },
+    {
+      "code": "2-05-71",
+      "description": "Metal Picket Guardrails"
+    },
+    {
+      "code": "2-05-72",
+      "description": "Metal Glass Insert Guardrails"
+    },
+    {
+      "code": "2-06-00",
+      "description": "WOOD & PLASTICS"
+    },
+    {
+      "code": "2-06-09",
+      "description": "Prefab Walls & Floors"
+    },
+    {
+      "code": "2-06-10",
+      "description": "Rough Carpentry Material"
+    },
+    {
+      "code": "2-06-11",
+      "description": "Rough Carpentry Labour"
+    },
+    {
+      "code": "2-06-12",
+      "description": "Truss Framing Labour"
+    },
+    {
+      "code": "2-06-15",
+      "description": "Interior Stairs and Railings"
+    },
+    {
+      "code": "2-06-18",
+      "description": "Engineered Wood Members"
+    },
+    {
+      "code": "2-06-19",
+      "description": "Wood Trusses"
+    },
+    {
+      "code": "2-06-20",
+      "description": "Finish Carpentry Material"
+    },
+    {
+      "code": "2-06-21",
+      "description": "Finish Carpentry Labour"
+    },
+    {
+      "code": "2-06-25",
+      "description": "Exterior Specialty Finish Material"
+    },
+    {
+      "code": "2-06-26",
+      "description": "Exterior Specialty Finish Labour"
+    },
+    {
+      "code": "2-07-00",
+      "description": "THERMAL & MOISTURE PROTECTION"
+    },
+    {
+      "code": "2-07-05",
+      "description": "Dampproofing"
+    },
+    {
+      "code": "2-07-10",
+      "description": "Waterproofing"
+    },
+    {
+      "code": "2-07-15",
+      "description": "Traffic Coating Membrane"
+    },
+    {
+      "code": "2-07-20",
+      "description": "Batt & Blown-in Insulation"
+    },
+    {
+      "code": "2-07-25",
+      "description": "Rigid Insulation / Poly (Slab)"
+    },
+    {
+      "code": "2-07-30",
+      "description": "Sprayed Insulation"
+    },
+    {
+      "code": "2-07-40",
+      "description": "Siding Labour"
+    },
+    {
+      "code": "2-07-41",
+      "description": "Vinyl Siding Material"
+    },
+    {
+      "code": "2-07-42",
+      "description": "Hardie Plank Siding Labour"
+    },
+    {
+      "code": "2-07-43",
+      "description": "Exterior Wood Trim & Materials"
+    },
+    {
+      "code": "2-07-44",
+      "description": "Hardie Plank Siding Material"
+    },
+    {
+      "code": "2-07-45",
+      "description": "Stucco/EIFS"
+    },
+    {
+      "code": "2-07-46",
+      "description": "Corrugated Metal Siding"
+    },
+    {
+      "code": "2-07-47",
+      "description": "Composite Metal Siding"
+    },
+    {
+      "code": "2-07-48",
+      "description": "Fire Stopping"
+    },
+    {
+      "code": "2-07-49",
+      "description": "Soffits/Flashing Materials"
+    },
+    {
+      "code": "2-07-50",
+      "description": "Vinyl Membrane Decking"
+    },
+    {
+      "code": "2-07-51",
+      "description": "Roofing Membranes"
+    },
+    {
+      "code": "2-07-52",
+      "description": "Roof Pavers"
+    },
+    {
+      "code": "2-07-60",
+      "description": "Roof Shingles(35yrAsphalt)"
+    },
+    {
+      "code": "2-07-65",
+      "description": "Metal Roof Cladding"
+    },
+    {
+      "code": "2-07-70",
+      "description": "Flashing & Sheet metal"
+    },
+    {
+      "code": "2-07-75",
+      "description": "Gutters&Downspouts"
+    },
+    {
+      "code": "2-07-90",
+      "description": "Caulking & Sealants"
+    },
+    {
+      "code": "2-08-00",
+      "description": "DOORS & WINDOWS"
+    },
+    {
+      "code": "2-08-10",
+      "description": "Steel Doors & Frames"
+    },
+    {
+      "code": "2-08-20",
+      "description": "Exterior Doors"
+    },
+    {
+      "code": "2-08-30",
+      "description": "Interior Doors"
+    },
+    {
+      "code": "2-08-31",
+      "description": "Door Hardware"
+    },
+    {
+      "code": "2-08-35",
+      "description": "Overhead Doors"
+    },
+    {
+      "code": "2-08-40",
+      "description": "Vinyl Frame Windows"
+    },
+    {
+      "code": "2-08-41",
+      "description": "Metal Frame Windows"
+    },
+    {
+      "code": "2-08-42",
+      "description": "Aluminum Storefront Glazing"
+    },
+    {
+      "code": "2-08-43",
+      "description": "Curtain Wall Glazing"
+    },
+    {
+      "code": "2-08-44",
+      "description": "Interior Glazing Partitions"
+    },
+    {
+      "code": "2-08-60",
+      "description": "Skylights"
+    },
+    {
+      "code": "2-08-61",
+      "description": "Roof Hatches"
+    },
+    {
+      "code": "2-08-70",
+      "description": "Hardware"
+    },
+    {
+      "code": "2-09-00",
+      "description": "FINISHES"
+    },
+    {
+      "code": "2-09-25",
+      "description": "Drywall"
+    },
+    {
+      "code": "2-09-26",
+      "description": "Non-Structural Steel Studs"
+    },
+    {
+      "code": "2-09-27",
+      "description": "Spraytex Ceilings"
+    },
+    {
+      "code": "2-09-30",
+      "description": "T-Bar Ceiling"
+    },
+    {
+      "code": "2-09-31",
+      "description": "Specialty Wood/Metal Ceilings"
+    },
+    {
+      "code": "2-09-39",
+      "description": "Ceramic Tile Material"
+    },
+    {
+      "code": "2-09-40",
+      "description": "Ceramic Tile Labour"
+    },
+    {
+      "code": "2-09-60",
+      "description": "Flooring Misc"
+    },
+    {
+      "code": "2-09-61",
+      "description": "Laminate Hardwood Flooring"
+    },
+    {
+      "code": "2-09-62",
+      "description": "Engineering Hardwood Flooring"
+    },
+    {
+      "code": "2-09-63",
+      "description": "Carpet"
+    },
+    {
+      "code": "2-09-90",
+      "description": "Interior Painting"
+    },
+    {
+      "code": "2-09-95",
+      "description": "Exterior Painting"
+    },
+    {
+      "code": "2-10-00",
+      "description": "SPECIALTIES"
+    },
+    {
+      "code": "2-10-20",
+      "description": "Louvres, Vents, Grates & Grill"
+    },
+    {
+      "code": "2-10-22",
+      "description": "Entry Signage& Address Plaq"
+    },
+    {
+      "code": "2-10-23",
+      "description": "Interior Signage"
+    },
+    {
+      "code": "2-10-24",
+      "description": "Line Painting"
+    },
+    {
+      "code": "2-10-30",
+      "description": "Fireplaces"
+    },
+    {
+      "code": "2-10-31",
+      "description": "Gas Fireplaces"
+    },
+    {
+      "code": "2-10-40",
+      "description": "Entry Canopy"
+    },
+    {
+      "code": "2-10-50",
+      "description": "Lockers"
+    },
+    {
+      "code": "2-10-55",
+      "description": "Postal Specialties"
+    },
+    {
+      "code": "2-10-67",
+      "description": "Storage Shelving"
+    },
+    {
+      "code": "2-10-80",
+      "description": "Washroom & Toilet Accessories"
+    },
+    {
+      "code": "2-10-81",
+      "description": "Washroom Partitions"
+    },
+    {
+      "code": "2-10-85",
+      "description": "Shower Doors"
+    },
+    {
+      "code": "2-10-90",
+      "description": "Mirrors"
+    },
+    {
+      "code": "2-10-95",
+      "description": "Misc Specialties"
+    },
+    {
+      "code": "2-11-00",
+      "description": "EQUIPMENT"
+    },
+    {
+      "code": "2-11-63",
+      "description": "Laundry"
+    },
+    {
+      "code": "2-11-80",
+      "description": "Vacuum- Rough In"
+    },
+    {
+      "code": "2-11-81",
+      "description": "Vacuum- System"
+    },
+    {
+      "code": "2-11-91",
+      "description": "Appliances"
+    },
+    {
+      "code": "2-11-92",
+      "description": "Wood Cabinets & Vanities"
+    },
+    {
+      "code": "2-11-93",
+      "description": "Metal Cabinets & Vanities"
+    },
+    {
+      "code": "2-11-94",
+      "description": "Laminate Countertops"
+    },
+    {
+      "code": "2-11-95",
+      "description": "Granite/Quartz Countertops"
+    },
+    {
+      "code": "2-12-00",
+      "description": "FURNISHINGS"
+    },
+    {
+      "code": "2-12-55",
+      "description": "Faux- Wood Blinds"
+    },
+    {
+      "code": "2-12-56",
+      "description": "Aluminum/Vinyl Blinds"
+    },
+    {
+      "code": "2-12-60",
+      "description": "Lobby Finishes & Furnishings"
+    },
+    {
+      "code": "2-12-61",
+      "description": "Amenity Finishes &Furnishings"
+    },
+    {
+      "code": "2-13-00",
+      "description": "SPECIAL CONSTRUCTION"
+    },
+    {
+      "code": "2-13-10",
+      "description": "Pool and Equipment"
+    },
+    {
+      "code": "2-13-20",
+      "description": "Hot Tubs"
+    },
+    {
+      "code": "2-13-50",
+      "description": "Amenity Building"
+    },
+    {
+      "code": "2-13-60",
+      "description": "Common Area & Corridor"
+    },
+    {
+      "code": "2-14-00",
+      "description": "CONVEYING SYSTEMS"
+    },
+    {
+      "code": "2-14-10",
+      "description": "Elevator"
+    },
+    {
+      "code": "2-14-40",
+      "description": "Escalator"
+    },
+    {
+      "code": "2-15-00",
+      "description": "MECHANICAL"
+    },
+    {
+      "code": "2-15-40",
+      "description": "Plumbing Work"
+    },
+    {
+      "code": "2-15-41",
+      "description": "Plumbing Fixtures"
+    },
+    {
+      "code": "2-15-50",
+      "description": "Sprinklers"
+    },
+    {
+      "code": "2-15-60",
+      "description": "HVAC"
+    },
+    {
+      "code": "2-15-61",
+      "description": "Fortis Gas Rebate Program"
+    },
+    {
+      "code": "2-15-65",
+      "description": "Ventilation"
+    },
+    {
+      "code": "2-15-70",
+      "description": "Gas Fitting"
+    },
+    {
+      "code": "2-15-71",
+      "description": "HWT Tank"
+    },
+    {
+      "code": "2-15-75",
+      "description": "Air Conditioning"
+    },
+    {
+      "code": "2-15-80",
+      "description": "Geothermal Systems"
+    },
+    {
+      "code": "2-15-90",
+      "description": "Mechanical Controls"
+    },
+    {
+      "code": "2-15-97",
+      "description": "Duct Cleaning"
+    },
+    {
+      "code": "2-16-00",
+      "description": "ELECTRICAL"
+    },
+    {
+      "code": "2-16-10",
+      "description": "Electrical Work"
+    },
+    {
+      "code": "2-16-15",
+      "description": "Nu-Heat Electrical Radiant"
+    },
+    {
+      "code": "2-16-20",
+      "description": "Heat Tracing"
+    },
+    {
+      "code": "2-16-50",
+      "description": "Light Fixtures(Interior)"
+    },
+    {
+      "code": "2-16-51",
+      "description": "Light Fixtures (Exterior)"
+    },
+    {
+      "code": "2-16-55",
+      "description": "Alarm System Pre-wire"
+    },
+    {
+      "code": "2-16-56",
+      "description": "Alarm System Finish"
+    },
+    {
+      "code": "2-16-60",
+      "description": "Building Automation"
+    },
+    {
+      "code": "2-16-61",
+      "description": "Low Voltage Wiring"
+    },
+    {
+      "code": "2-16-76",
+      "description": "Security Systems"
+    },
+    {
+      "code": "2-16-78",
+      "description": "Cable & Tel Ducting/Wiring"
+    },
+    {
+      "code": "2-16-80",
+      "description": "Electric Car Charging Stations"
+    },
+    {
+      "code": "3-00-00",
+      "description": "SOFT CONSTRUCTION COSTS"
+    },
+    {
+      "code": "3-17-00",
+      "description": "CONSULTANTS"
+    },
+    {
+      "code": "3-17-01",
+      "description": "Development Manager"
+    },
+    {
+      "code": "3-17-02",
+      "description": "Project Manager"
+    },
+    {
+      "code": "3-17-03",
+      "description": "Construction Manager"
+    },
+    {
+      "code": "3-17-04",
+      "description": "Geotechnical Engineer"
+    },
+    {
+      "code": "3-17-05",
+      "description": "Architects"
+    },
+    {
+      "code": "3-17-06",
+      "description": "Illustrators"
+    },
+    {
+      "code": "3-17-07",
+      "description": "Landscape Architect"
+    },
+    {
+      "code": "3-17-08",
+      "description": "Structural Engineer"
+    },
+    {
+      "code": "3-17-09",
+      "description": "Mechanical Engineer"
+    },
+    {
+      "code": "3-17-10",
+      "description": "Electrical Engineer"
+    },
+    {
+      "code": "3-17-11",
+      "description": "Surveyors"
+    },
+    {
+      "code": "3-17-12",
+      "description": "Legal"
+    },
+    {
+      "code": "3-17-13",
+      "description": "Interior Decorator/Designer"
+    },
+    {
+      "code": "3-17-14",
+      "description": "Exterior Envelope Consultants"
+    },
+    {
+      "code": "3-17-15",
+      "description": "Environmental Consultant"
+    },
+    {
+      "code": "3-17-16",
+      "description": "Civil Engineer"
+    },
+    {
+      "code": "3-17-17",
+      "description": "Appraisers"
+    },
+    {
+      "code": "3-17-19",
+      "description": "Market Analysis"
+    },
+    {
+      "code": "3-17-20",
+      "description": "Accountant"
+    },
+    {
+      "code": "3-17-21",
+      "description": "BIM Modeling"
+    },
+    {
+      "code": "3-17-22",
+      "description": "Liability Insurance"
+    },
+    {
+      "code": "3-17-23",
+      "description": "Certified Professional"
+    },
+    {
+      "code": "3-17-24",
+      "description": "Safety Consultant"
+    },
+    {
+      "code": "3-17-25",
+      "description": "Acoustical Engineer"
+    },
+    {
+      "code": "3-17-26",
+      "description": "Street Light Engineer"
+    },
+    {
+      "code": "3-17-27",
+      "description": "Code Consultant"
+    },
+    {
+      "code": "3-17-28",
+      "description": "Hazmat Consultant"
+    },
+    {
+      "code": "3-17-29",
+      "description": "Homeowner Orientation Consult."
+    },
+    {
+      "code": "3-17-30",
+      "description": "Arborist"
+    },
+    {
+      "code": "3-17-32",
+      "description": "Energy Consultant"
+    },
+    {
+      "code": "3-17-35",
+      "description": "Project Manager Disbursements"
+    },
+    {
+      "code": "3-17-45",
+      "description": "10% Admin Fee"
+    },
+    {
+      "code": "3-17-46",
+      "description": "Development Manager Expenses"
+    },
+    {
+      "code": "3-17-47",
+      "description": "Other Consultants"
+    },
+    {
+      "code": "3-17-60",
+      "description": "Consultant Disbursements"
+    },
+    {
+      "code": "3-19-00",
+      "description": "MUNICIPAL LEVIES"
+    },
+    {
+      "code": "3-19-01",
+      "description": "City Rezoning Fees"
+    },
+    {
+      "code": "3-19-02",
+      "description": "Development Cost Charges"
+    },
+    {
+      "code": "3-19-03",
+      "description": "Building Permit fees"
+    },
+    {
+      "code": "3-19-04",
+      "description": "Property Taxes"
+    },
+    {
+      "code": "3-19-06",
+      "description": "GVS & DD Charges"
+    },
+    {
+      "code": "3-19-07",
+      "description": "School site Acquisition Costs"
+    },
+    {
+      "code": "3-19-08",
+      "description": "NCP Amenity Contribution"
+    },
+    {
+      "code": "3-19-09",
+      "description": "Connection fees"
+    },
+    {
+      "code": "3-19-10",
+      "description": "Administrative fees & levies"
+    },
+    {
+      "code": "3-19-11",
+      "description": "Parkland Acquisition Fee"
+    },
+    {
+      "code": "3-19-13",
+      "description": "Future Works and DWA"
+    },
+    {
+      "code": "3-19-14",
+      "description": "Public Art Reserve Fee"
+    },
+    {
+      "code": "3-19-15",
+      "description": "Cash in Lieu of Amenity Build"
+    },
+    {
+      "code": "3-19-16",
+      "description": "Tree Cutting Permit&Green Fun"
+    },
+    {
+      "code": "3-19-17",
+      "description": "Environmental Restration Fee"
+    },
+    {
+      "code": "3-19-18",
+      "description": "CAC Fess"
+    },
+    {
+      "code": "3-19-19",
+      "description": "Translink Development Charge"
+    },
+    {
+      "code": "3-19-20",
+      "description": "Bylaw Fines"
+    },
+    {
+      "code": "3-20-00",
+      "description": "FINANCING"
+    },
+    {
+      "code": "3-20-01",
+      "description": "Financing Fees"
+    },
+    {
+      "code": "3-20-02",
+      "description": "Brokerage Fees"
+    },
+    {
+      "code": "3-20-03",
+      "description": "Financing Legal"
+    },
+    {
+      "code": "3-20-04",
+      "description": "Mortgage Inspection Fee"
+    },
+    {
+      "code": "3-20-05",
+      "description": "Finance Interest Reserve"
+    },
+    {
+      "code": "3-20-06",
+      "description": "Letter of Credit Fees"
+    },
+    {
+      "code": "3-20-07",
+      "description": "Draw/Bank Fees"
+    },
+    {
+      "code": "3-20-09",
+      "description": "Investor finder fee"
+    },
+    {
+      "code": "4-00-00",
+      "description": "SALES & MARKETING"
+    },
+    {
+      "code": "4-21-00",
+      "description": "SALES & MARKETING"
+    },
+    {
+      "code": "4-21-01",
+      "description": "Advertising"
+    },
+    {
+      "code": "4-21-02",
+      "description": "Brochure & Printing"
+    },
+    {
+      "code": "4-21-03",
+      "description": "Design Work & Composition"
+    },
+    {
+      "code": "4-21-04",
+      "description": "Display Suite"
+    },
+    {
+      "code": "4-21-06",
+      "description": "New Home Warranty"
+    },
+    {
+      "code": "4-21-07",
+      "description": "Warranty- HPO"
+    },
+    {
+      "code": "4-21-08",
+      "description": "Commissions- Marketing Company"
+    },
+    {
+      "code": "4-21-09",
+      "description": "Commissions- (Outside Agent)"
+    },
+    {
+      "code": "4-21-10",
+      "description": "Sales Manager/Hostess"
+    },
+    {
+      "code": "4-21-11",
+      "description": "Property Management"
+    },
+    {
+      "code": "4-21-12",
+      "description": "Developer Strata Contribution"
+    },
+    {
+      "code": "4-21-13",
+      "description": "Due from Strata"
+    },
+    {
+      "code": "4-21-14",
+      "description": "Strata Fees"
+    },
+    {
+      "code": "4-21-15",
+      "description": "Customer Upgrades"
+    },
+    {
+      "code": "4-21-16",
+      "description": "Marketing Software"
+    },
+    {
+      "code": "4-21-17",
+      "description": "Architectural Scale Model"
+    },
+    {
+      "code": "4-21-98",
+      "description": "Marketing Signage"
+    },
+    {
+      "code": "4-21-99",
+      "description": "Homeowner Packages"
+    },
+    {
+      "code": "5-00-00",
+      "description": "CONTINGENCIES"
+    },
+    {
+      "code": "5-22-00",
+      "description": "CONTINGENCIES"
+    },
+    {
+      "code": "5-22-01",
+      "description": "Construction Contingency"
+    },
+    {
+      "code": "5-22-02",
+      "description": "General Contingency"
+    },
+    {
+      "code": "5-22-03",
+      "description": "Escalation Contingency"
+    },
+    {
+      "code": "5-22-04",
+      "description": "Design Contingency"
+    }
+  ]
+}

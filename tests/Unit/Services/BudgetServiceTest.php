@@ -11,12 +11,12 @@ use App\Models\CostCode;
 use App\Models\ProjectCostCode;
 use App\Models\Company;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 
 class BudgetServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected BudgetService $budgetService;
     protected Company $company;
@@ -405,8 +405,8 @@ class BudgetServiceTest extends TestCase
         $this->assertTrue($result['valid']);
         $this->assertEquals(10000.00, $result['budget_amount']);
         $this->assertEquals(2000.00, $result['committed']);
-        $this->assertEquals(8000.00, $result['available']);
-        $this->assertEquals(3000.00, $result['remaining_after_po']);
+        $this->assertEquals(7000.00, $result['available']);
+        $this->assertEquals(2000.00, $result['remaining_after_po']);
     }
 
     /** @test */
@@ -558,7 +558,7 @@ class BudgetServiceTest extends TestCase
         $this->assertEquals(15000.00, $result['total_original']);
         $this->assertEquals(7000.00, $result['total_committed']);
         $this->assertEquals(4000.00, $result['total_actual']);
-        $this->assertEquals(10000.00, $result['total_available']);
+        $this->assertEquals(6000.00, $result['total_available']);
         $this->assertEquals(13000.00, $result['total_variance']);
         $this->assertCount(2, $result['budgets_by_cost_code']);
     }

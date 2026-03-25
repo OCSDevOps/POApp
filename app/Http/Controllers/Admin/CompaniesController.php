@@ -4,12 +4,19 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Company;
+use App\Services\CostCodeTemplateProvisioningService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
 class CompaniesController extends Controller
 {
+    public function __construct(
+        protected CostCodeTemplateProvisioningService $costCodeTemplateProvisioningService
+    ) {
+    }
+
     /**
      * Display a listing of companies.
      * Only accessible by super admins (u_type = 1)
@@ -54,11 +61,18 @@ class CompaniesController extends Controller
         }
 
         $validated['status'] = 1; // Active
-        
-        $company = Company::create($validated);
 
-        return redirect()->route('admin.companies.show', $company)
-            ->with('success', 'Company created successfully.');
+        DB::transaction(function () use ($validated) {
+            $company = Company::create($validated);
+
+            $this->costCodeTemplateProvisioningService->provisionForCompany(
+                (int) $company->id,
+                auth()->id()
+            );
+        });
+
+        return redirect()->route('admin.companies.index')
+            ->with('success', 'Company created successfully with the March 2020 standard cost code template pack.');
     }
 
     /**
@@ -109,7 +123,7 @@ class CompaniesController extends Controller
         
         $company->update($validated);
 
-        return redirect()->route('admin.companies.show', $company)
+        return redirect()->route('admin.companies.index')
             ->with('success', 'Company updated successfully.');
     }
 

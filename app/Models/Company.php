@@ -36,8 +36,21 @@ class Company extends Model
     protected $fillable = [
         'name',
         'subdomain',
+        'company_code',
+        'email',
+        'phone',
+        'address',
+        'city',
+        'state',
+        'zip',
+        'country',
         'status',
         'settings',
+        'subscription_tier',
+        'subscription_expires',
+        'logo_path',
+        'created_by',
+        'updated_by',
     ];
 
     /**
@@ -48,6 +61,7 @@ class Company extends Model
     protected $casts = [
         'status' => 'integer',
         'settings' => 'array',
+        'subscription_expires' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

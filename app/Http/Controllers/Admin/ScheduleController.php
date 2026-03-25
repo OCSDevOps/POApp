@@ -69,8 +69,7 @@ class ScheduleController extends Controller
             ->orderBy('proj_name')
             ->get();
 
-        // Gather schedule metrics per project
-        $projectData = [];
+        // Gather schedule metrics per project — attach as dynamic attributes
         foreach ($projects as $project) {
             $activityCount = ScheduleActivity::where('act_project_id', $project->proj_id)->count();
 
@@ -79,36 +78,43 @@ class ScheduleController extends Controller
                 ->first();
 
             $healthGrade = null;
-            $lastRunDate = null;
-            $status = 'No Schedule';
+            $criticalCount = 0;
+            $completionPct = 0;
 
             if ($latestRun) {
                 $healthSummary = $latestRun->run_health_summary;
+                if (is_string($healthSummary)) {
+                    $healthSummary = json_decode($healthSummary, true);
+                }
                 $healthGrade = is_array($healthSummary) ? ($healthSummary['health_grade'] ?? null) : null;
-                $lastRunDate = $latestRun->run_created_at;
-                $status = 'Scheduled';
+                $criticalCount = $latestRun->run_critical_count ?? 0;
             }
 
-            if ($activityCount === 0) {
-                $status = 'No Activities';
+            if ($activityCount > 0) {
+                $completedCount = ScheduleActivity::where('act_project_id', $project->proj_id)
+                    ->where('act_status', 'COMPLETE')->count();
+                $completionPct = $activityCount > 0 ? round(($completedCount / $activityCount) * 100) : 0;
             }
 
             // If no grade in run summary, compute it live
             if ($activityCount > 0 && $healthGrade === null) {
-                $summary = $this->cpmService->getHealthSummary($project->proj_id);
-                $healthGrade = $summary['health_grade'] ?? 'N/A';
+                try {
+                    $summary = $this->cpmService->getHealthSummary($project->proj_id);
+                    $healthGrade = $summary['health_grade'] ?? 'N/A';
+                } catch (\Throwable $e) {
+                    $healthGrade = 'N/A';
+                }
             }
 
-            $projectData[] = [
-                'project'        => $project,
-                'activity_count' => $activityCount,
-                'last_run_date'  => $lastRunDate,
-                'health_grade'   => $healthGrade ?? 'N/A',
-                'status'         => $status,
-            ];
+            // Attach dynamic attributes the view expects
+            $project->activity_count = $activityCount;
+            $project->latest_run = $latestRun;
+            $project->health_grade = $healthGrade ?? 'N/A';
+            $project->critical_count = $criticalCount;
+            $project->completion_pct = $completionPct;
         }
 
-        return view('admin.schedule.index', compact('projectData'));
+        return view('admin.schedule.index', compact('projects'));
     }
 
     /**

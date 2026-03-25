@@ -57,12 +57,12 @@ class BudgetChangeOrderController extends Controller
         $project = Project::findOrFail($projectId);
         
         // Get budgets for this project
-        $budgets = Budget::where('budget_project_ms', $projectId)
+        $budgets = Budget::where('budget_project_id', $projectId)
             ->with('costCode')
             ->get();
         
         // Get cost codes assigned to project
-        $costCodes = CostCode::whereIn('cc_id', $budgets->pluck('budget_cc_ms'))
+        $costCodes = CostCode::whereIn('cc_id', $budgets->pluck('budget_cost_code_id'))
             ->orderBy('cc_full_code')
             ->get();
 
@@ -315,8 +315,8 @@ class BudgetChangeOrderController extends Controller
             'cost_code_id' => 'required|exists:cost_code_master,cc_id',
         ]);
 
-        $budget = Budget::where('budget_project_ms', $projectId)
-            ->where('budget_cc_ms', $request->cost_code_id)
+        $budget = Budget::where('budget_project_id', $projectId)
+            ->where('budget_cost_code_id', $request->cost_code_id)
             ->with('costCode')
             ->first();
 

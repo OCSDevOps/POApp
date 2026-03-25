@@ -27,6 +27,14 @@
                 <a href="{{ route('admin.budget.summary') }}" class="btn btn-info btn-sm">
                     <i class="fas fa-chart-pie me-1"></i> Budget Summary
                 </a>
+                @if(request('project_id'))
+                    <a href="{{ route('admin.budget-change-orders.index', request('project_id')) }}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-exchange-alt me-1"></i> Budget Change Orders
+                    </a>
+                    <a href="{{ route('admin.budget-change-orders.create', request('project_id')) }}" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-plus me-1"></i> New Change Order
+                    </a>
+                @endif
                 <a href="{{ route('admin.budget.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus me-1"></i> Create Budget
                 </a>
@@ -134,6 +142,11 @@
                                     <a href="{{ route('admin.budget.edit', $budget->budget_id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    @if($budget->budget_project_id)
+                                    <a href="{{ route('admin.budget-change-orders.create', $budget->budget_project_id) }}" class="btn btn-sm btn-outline-warning" title="Create Change Order">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </a>
+                                    @endif
                                     <button type="button" class="btn btn-sm btn-outline-danger delete-btn" title="Delete"
                                             data-url="{{ route('admin.budget.destroy', $budget->budget_id) }}" data-name="{{ ($budget->project->proj_name ?? '') . ' / ' . ($budget->costCode->cc_no ?? '') }}">
                                         <i class="fas fa-trash"></i>

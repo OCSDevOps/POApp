@@ -21,7 +21,7 @@ use App\Models\SupplierCatalog;
 use App\Models\User;
 use App\Notifications\BackorderNotification;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class PurchaseOrderService
 {
@@ -73,11 +73,17 @@ class PurchaseOrderService
             // Add items
             $totalAmount = 0;
             $totalTax = 0;
+            $poCostCodes = [];
 
             foreach ($items as $item) {
+                $itemModel = Item::where('item_code', $item['item_code'])->first();
                 $subtotal = $item['quantity'] * $item['unit_price'];
                 $taxAmount = $subtotal * (($item['tax_rate'] ?? 0) / 100);
                 $total = $subtotal + $taxAmount;
+
+                if ($itemModel && !empty($itemModel->item_ccode_ms)) {
+                    $poCostCodes[] = (int) $itemModel->item_ccode_ms;
+                }
 
                 PurchaseOrderItem::create([
                     'po_detail_autogen' => date('dmyHis') . rand(100, 999),
@@ -85,6 +91,7 @@ class PurchaseOrderService
                     'po_detail_item' => $item['item_code'],
                     'po_detail_sku' => $item['sku'] ?? '',
                     'po_detail_taxcode' => $item['tax_rate'] ?? '0',
+                    'po_detail_ccode' => $itemModel?->item_ccode_ms,
                     'po_detail_quantity' => $item['quantity'],
                     'po_detail_unitprice' => $item['unit_price'],
                     'po_detail_subtotal' => $subtotal,
@@ -100,9 +107,11 @@ class PurchaseOrderService
             }
 
             // Update PO totals
+            $uniqueCostCodes = array_values(array_unique(array_filter($poCostCodes)));
             $po->update([
                 'porder_total_amount' => $totalAmount + $totalTax,
                 'porder_total_tax' => $totalTax,
+                'porder_cost_code' => count($uniqueCostCodes) === 1 ? $uniqueCostCodes[0] : null,
             ]);
 
             // Commit budget if constraints enabled
@@ -218,6 +227,8 @@ class PurchaseOrderService
                     'rfqi_item_id' => $item['item_id'],
                     'rfqi_quantity' => $item['quantity'],
                     'rfqi_uom_id' => $item['uom_id'],
+                    'project_id' => $data['project_id'],
+                    'company_id' => $rfq->company_id,
                     'rfqi_target_price' => $item['target_price'] ?? null,
                     'rfqi_notes' => $item['notes'] ?? null,
                     'rfqi_created_at' => now(),
@@ -229,6 +240,7 @@ class PurchaseOrderService
                 RfqSupplier::create([
                     'rfqs_rfq_id' => $rfq->rfq_id,
                     'rfqs_supplier_id' => $supplierId,
+                    'company_id' => $rfq->company_id,
                     'rfqs_status' => RfqSupplier::STATUS_PENDING,
                     'rfqs_created_at' => now(),
                 ]);
@@ -260,12 +272,23 @@ class PurchaseOrderService
         DB::beginTransaction();
         
         try {
-            $rfqSupplier = RfqSupplier::findOrFail($rfqSupplierId);
+            $rfqSupplier = RfqSupplier::with('rfq')->findOrFail($rfqSupplierId);
+            $validRfqItemIds = RfqItem::where('rfqi_rfq_id', $rfqSupplier->rfqs_rfq_id)
+                ->pluck('rfqi_id')
+                ->all();
 
             foreach ($quotes as $quote) {
-                RfqQuote::create([
+                if (! in_array((int) $quote['rfq_item_id'], $validRfqItemIds, true)) {
+                    throw ValidationException::withMessages([
+                        'quotes' => 'One or more quoted items do not belong to this RFQ.',
+                    ]);
+                }
+
+                RfqQuote::updateOrCreate([
                     'rfqq_rfqs_id' => $rfqSupplierId,
                     'rfqq_rfqi_id' => $quote['rfq_item_id'],
+                ], [
+                    'company_id' => $rfqSupplier->company_id ?? optional($rfqSupplier->rfq)->company_id,
                     'rfqq_quoted_price' => $quote['price'],
                     'rfqq_lead_time_days' => $quote['lead_time_days'] ?? null,
                     'rfqq_valid_until' => $quote['valid_until'] ?? null,
@@ -275,6 +298,13 @@ class PurchaseOrderService
             }
 
             $rfqSupplier->markAsResponded();
+
+            if ($rfqSupplier->rfq && (int) $rfqSupplier->rfq->rfq_status < Rfq::STATUS_RECEIVED) {
+                $rfqSupplier->rfq->update([
+                    'rfq_status' => Rfq::STATUS_RECEIVED,
+                    'rfq_modified_at' => now(),
+                ]);
+            }
 
             DB::commit();
             return $rfqSupplier;
@@ -380,6 +410,7 @@ class PurchaseOrderService
         
         try {
             $po = PurchaseOrder::findOrFail($poId);
+            $budgetService = app(BudgetService::class);
 
             $receiveOrder = ReceiveOrder::create([
                 'rorder_porder_ms' => $poId,
@@ -408,7 +439,20 @@ class PurchaseOrderService
                     ->first();
 
                 if ($poItem) {
-                    $totalAmount += $item['quantity'] * $poItem->po_detail_unitprice;
+                    $itemCost = $item['quantity'] * $poItem->po_detail_unitprice;
+                    $totalAmount += $itemCost;
+
+                    $costCodeId = $poItem->po_detail_ccode
+                        ?: optional($poItem->item)->item_ccode_ms
+                        ?: $po->porder_cost_code;
+
+                    if ($costCodeId) {
+                        $budgetService->updateJobCostActual(
+                            $po->porder_project_ms,
+                            $costCodeId,
+                            $itemCost
+                        );
+                    }
                 }
             }
 
@@ -418,32 +462,6 @@ class PurchaseOrderService
             $this->updatePoDeliveryStatus($po);
 
             // Update budget actual amounts (track committed → actual transition)
-            foreach ($items as $item) {
-                $poItem = PurchaseOrderItem::where('po_detail_porder_ms', $poId)
-                    ->where('po_detail_item', $item['item_code'])
-                    ->first();
-
-                if ($poItem && !empty($poItem->po_detail_ccode)) {
-                    $itemCost = $item['quantity'] * $poItem->po_detail_unitprice;
-                    
-                    // Update budget actual amount
-                    $budget = Budget::where('budget_proj_ms', $po->porder_project_ms)
-                        ->where('budget_ccode', $poItem->po_detail_ccode)
-                        ->first();
-
-                    if ($budget) {
-                        $budget->increment('actual', $itemCost);
-                        
-                        Log::info('Budget actual updated', [
-                            'project_id' => $po->porder_project_ms,
-                            'cost_code' => $poItem->po_detail_ccode,
-                            'amount' => $itemCost,
-                            'receive_order' => $receiveOrder->rorder_id
-                        ]);
-                    }
-                }
-            }
-
             DB::commit();
             return $receiveOrder;
 
@@ -611,7 +629,9 @@ class PurchaseOrderService
     {
         $query = ItemPriceHistory::where('iph_item_id', $itemId)
             ->with(['supplier', 'item'])
-            ->orderBy('iph_effective_date', 'DESC');
+            ->orderBy('iph_effective_date', 'DESC')
+            ->orderBy('iph_created_at', 'DESC')
+            ->orderBy('iph_id', 'DESC');
 
         if ($supplierId) {
             $query->where('iph_supplier_id', $supplierId);

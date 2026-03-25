@@ -16,6 +16,7 @@ class RfqQuote extends Model
     protected $fillable = [
         'rfqq_rfqs_id',
         'rfqq_rfqi_id',
+        'company_id',
         'rfqq_quoted_price',
         'rfqq_lead_time_days',
         'rfqq_valid_until',

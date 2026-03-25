@@ -15,7 +15,7 @@ use App\Models\Supplier;
 use App\Models\Company;
 use App\Models\User;
 use App\Models\ApprovalWorkflow;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 
 /**
@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Queue;
  */
 class PurchaseOrderBudgetWorkflowTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected BudgetService $budgetService;
     protected PurchaseOrderService $poService;
@@ -203,17 +203,8 @@ class PurchaseOrderBudgetWorkflowTest extends TestCase
 
         $this->assertNotNull($receiveOrder);
 
-        // ==========================================
-        // Step 8: Update Budget Actuals
-        // ==========================================
-        $actualAmount = 80 * 150.00; // 80 units @ $150
-        $this->budgetService->updateJobCostActual(
-            $this->project->proj_id,
-            $this->costCode->cc_id,
-            $actualAmount
-        );
-
         $budget->refresh();
+        $this->assertEquals(3000.00, $budget->budget_committed_amount);
         $this->assertEquals(12000.00, $budget->budget_spent_amount);
 
         // ==========================================
@@ -239,7 +230,7 @@ class PurchaseOrderBudgetWorkflowTest extends TestCase
         );
 
         $budget->refresh();
-        $this->assertEquals(30000.00, $budget->budget_committed_amount); // 15000 + 15000
+        $this->assertEquals(18000.00, $budget->budget_committed_amount); // 3000 remaining + 15000 new commitment
         $this->assertEquals(12000.00, $budget->budget_spent_amount);
 
         // ==========================================
@@ -248,13 +239,13 @@ class PurchaseOrderBudgetWorkflowTest extends TestCase
         $finalSummary = $this->budgetService->getProjectBudgetSummary($this->project->proj_id);
 
         $this->assertEquals(50000.00, $finalSummary['total_budget']);
-        $this->assertEquals(30000.00, $finalSummary['total_committed']);
+        $this->assertEquals(18000.00, $finalSummary['total_committed']);
         $this->assertEquals(12000.00, $finalSummary['total_actual']);
         $this->assertEquals(20000.00, $finalSummary['total_available']);
         $this->assertEquals(38000.00, $finalSummary['total_variance']); // 50000 - 12000
 
         // Verify utilization calculation
-        $this->assertEquals(84, $budget->fresh()->utilization_percent); // (30000 + 12000) / 50000 * 100
+        $this->assertEquals(60, $budget->fresh()->utilization_percent); // (18000 + 12000) / 50000 * 100
     }
 
     /** @test */

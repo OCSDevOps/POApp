@@ -71,6 +71,11 @@ Route::controller(ReportsController::class)->group(function(){
 //     Route::get('dashboard-projects','dashboard_projects')->name('dashboard.projects');
 // });
 
+// Legacy admin dashboard alias kept for backwards compatibility.
+Route::middleware(['auth'])->get('/admin/dashboard', function () {
+    return redirect()->route('admin.dashboard');
+});
+
 // Admin Routes (Protected by auth middleware)
 Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(function () {
     
@@ -281,7 +286,20 @@ Route::middleware(['auth'])->prefix('admincontrol')->name('admin.')->group(funct
         // Hierarchical cost code management
         Route::get('/hierarchy', [CostCodeController::class, 'hierarchy'])->name('hierarchy');
         Route::post('/hierarchical', [CostCodeController::class, 'storeHierarchical'])->name('store-hierarchical');
+        Route::put('/hierarchical/{costcode}', [CostCodeController::class, 'updateHierarchical'])->name('update-hierarchical');
         Route::get('/{parentCode}/children', [CostCodeController::class, 'getChildCodes'])->name('children');
+    });
+
+    // Cost Code Templates
+    Route::prefix('costcode-templates')->name('costcode-templates.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CostCodeTemplateController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\CostCodeTemplateController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\CostCodeTemplateController::class, 'store'])->name('store');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\CostCodeTemplateController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [\App\Http\Controllers\Admin\CostCodeTemplateController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [\App\Http\Controllers\Admin\CostCodeTemplateController::class, 'update'])->name('update');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\CostCodeTemplateController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}/cost-codes', [\App\Http\Controllers\Admin\CostCodeTemplateController::class, 'getCostCodes'])->name('cost-codes');
     });
 
     // Units of Measure
@@ -621,6 +639,8 @@ Route::post('procore/webhook', [ProcoreController::class, 'webhook'])->name('pro
 // Debug-only: Seed database via HTTP (since artisan hangs on this project)
 if (app()->environment('local') || config('app.debug')) {
     Route::get('_dev/seed', [\App\Http\Controllers\DevSeedController::class, 'run'])->name('dev.seed');
+    Route::get('_dev/seedext', [\App\Http\Controllers\DevSeedController::class, 'seedExtended'])->name('dev.seed-extended');
+    Route::get('_dev/createtables', [\App\Http\Controllers\DevSeedController::class, 'createTables'])->name('dev.create-tables');
     Route::get('_dev/debug-auth', [\App\Http\Controllers\DevSeedController::class, 'debugAuth'])->name('dev.debug-auth');
 }
 

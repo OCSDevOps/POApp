@@ -82,7 +82,7 @@ class BudgetChangeOrder extends Model
      */
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by', 'user_id');
+        return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
     /**
@@ -90,7 +90,7 @@ class BudgetChangeOrder extends Model
      */
     public function approver()
     {
-        return $this->belongsTo(User::class, 'approved_by', 'user_id');
+        return $this->belongsTo(User::class, 'approved_by', 'id');
     }
 
     /**
@@ -98,8 +98,7 @@ class BudgetChangeOrder extends Model
      */
     public function approvalRequest()
     {
-        return $this->hasOne(ApprovalRequest::class, 'entity_id', 'bco_id')
-            ->where('request_type', 'budget_co');
+        return $this->morphOne(ApprovalRequest::class, 'approvable');
     }
 
     /**

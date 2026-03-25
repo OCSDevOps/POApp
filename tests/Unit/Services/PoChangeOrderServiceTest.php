@@ -14,12 +14,12 @@ use App\Models\Company;
 use App\Models\User;
 use App\Models\Item;
 use App\Models\Supplier;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 
 class PoChangeOrderServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected PoChangeOrderService $poChangeOrderService;
     protected Company $company;

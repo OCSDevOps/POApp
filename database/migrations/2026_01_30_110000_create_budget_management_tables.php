@@ -76,7 +76,7 @@ return new class extends Migration
                 $table->unsignedBigInteger('company_id');
                 $table->string('poco_number', 50)->unique(); // PCO-2026-001
                 $table->unsignedBigInteger('purchase_order_id'); // References porder_id
-                $table->enum('poco_type', ['amount_change', 'item_change', 'date_change', 'other'])->default('amount_change');
+                $table->enum('poco_type', ['amount_change', 'item_change', 'date_change', 'term_change', 'other'])->default('amount_change');
                 $table->decimal('poco_amount', 15, 2)->default(0); // Change amount (positive/negative)
                 $table->decimal('previous_total', 15, 2); // PO total before CO
                 $table->decimal('new_total', 15, 2); // PO total after CO
@@ -106,10 +106,12 @@ return new class extends Migration
                 $table->unsignedBigInteger('company_id');
                 $table->string('workflow_name', 100);
                 $table->enum('workflow_type', ['budget', 'budget_co', 'po', 'po_co', 'receive_order'])->index();
+                $table->unsignedBigInteger('project_id')->nullable();
                 $table->integer('approval_level')->default(1); // Sequential approval levels
                 $table->decimal('amount_threshold_min', 15, 2)->default(0);
                 $table->decimal('amount_threshold_max', 15, 2)->nullable(); // NULL = no max
-                $table->json('approver_user_ids'); // Array of user IDs who can approve at this level
+                $table->json('approver_user_ids')->nullable(); // Array of user IDs who can approve at this level
+                $table->json('approver_roles')->nullable(); // Optional project-role based approvers
                 $table->enum('approval_logic', ['any', 'all'])->default('any'); // any = one approver enough, all = all must approve
                 $table->boolean('is_active')->default(true);
                 $table->integer('sort_order')->default(0);
@@ -119,6 +121,7 @@ return new class extends Migration
                 
                 $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
                 $table->index(['company_id', 'workflow_type', 'is_active']);
+                $table->index(['project_id', 'workflow_type', 'is_active']);
                 $table->index(['approval_level', 'amount_threshold_min']);
             });
         }

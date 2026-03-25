@@ -18,6 +18,8 @@ class RfqItem extends Model
         'rfqi_item_id',
         'rfqi_quantity',
         'rfqi_uom_id',
+        'project_id',
+        'company_id',
         'rfqi_target_price',
         'rfqi_notes',
         'rfqi_created_at',

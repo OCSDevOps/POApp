@@ -18,12 +18,12 @@ use App\Models\RfqSupplier;
 use App\Models\RfqQuote;
 use App\Models\SupplierCatalog;
 use App\Models\UnitOfMeasure;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Notification;
 
 class PurchaseOrderServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected PurchaseOrderService $poService;
     protected Company $company;
@@ -162,7 +162,7 @@ class PurchaseOrderServiceTest extends TestCase
         ]);
 
         $this->assertEquals(2, $po->porder_total_item);
-        $this->assertEquals(1100.00 + 220.00, $po->porder_total_amount); // Subtotals + tax
+        $this->assertEquals(2200.00, $po->porder_total_amount); // Two $1000 lines plus 10% tax each
 
         // Check items were created
         $this->assertDatabaseHas('purchase_order_detail', [

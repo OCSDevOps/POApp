@@ -93,7 +93,7 @@ class AuthController extends Controller
         }
 
         /** @var User|null $user */
-        $user = User::withoutGlobalScope('company')->find($pendingUserId);
+        $user = User::withoutGlobalScope(\App\Models\Scopes\CompanyScope::class)->find($pendingUserId);
         if (!$user || empty($user->two_factor_secret)) {
             session()->forget(['two_factor_pending_user_id', 'two_factor_remember']);
             return redirect('/')->with('invalid-user', 'true');

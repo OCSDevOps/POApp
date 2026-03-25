@@ -17,23 +17,23 @@ class ProjectRoleController extends Controller
     public function index(Request $request)
     {
         $projectId = $request->get('project_id');
-        
+
         $projects = Project::active()->orderByName()->get();
-        
+
         if ($projectId) {
             $project = Project::findOrFail($projectId);
             $roles = ProjectRole::with('user')
-                ->where('pr_project_id', $projectId)
+                ->where('project_id', $projectId)
                 ->get()
-                ->groupBy('pr_role');
-            
+                ->groupBy('role_name');
+
             $users = User::where('u_type', 1) // Active users only
                 ->orderBy('name', 'ASC')
                 ->get();
-            
+
             return view('admin.project-roles.index', compact('project', 'roles', 'users'));
         }
-        
+
         return view('admin.project-roles.select', compact('projects'));
     }
 
@@ -52,9 +52,9 @@ class ProjectRoleController extends Controller
 
         try {
             // Check if role assignment already exists
-            $existing = ProjectRole::where('pr_project_id', $request->project_id)
-                ->where('pr_user_id', $request->user_id)
-                ->where('pr_role', $request->role)
+            $existing = ProjectRole::where('project_id', $request->project_id)
+                ->where('user_id', $request->user_id)
+                ->where('role_name', $request->role)
                 ->first();
 
             if ($existing) {
@@ -62,13 +62,12 @@ class ProjectRoleController extends Controller
             }
 
             ProjectRole::create([
-                'pr_project_id' => $request->project_id,
-                'pr_user_id' => $request->user_id,
-                'pr_role' => $request->role,
-                'pr_can_approve' => $request->can_approve ?? false,
-                'pr_approval_limit' => $request->approval_limit,
-                'pr_created_at' => now(),
-                'pr_created_by' => auth()->id(),
+                'company_id' => session('company_id'),
+                'project_id' => $request->project_id,
+                'user_id' => $request->user_id,
+                'role_name' => $request->role,
+                'can_approve_po' => $request->can_approve ?? false,
+                'approval_limit' => $request->approval_limit,
             ]);
 
             return back()->with('success', 'Role assigned successfully.');
@@ -92,10 +91,8 @@ class ProjectRoleController extends Controller
             $role = ProjectRole::findOrFail($id);
             
             $role->update([
-                'pr_can_approve' => $request->can_approve ?? false,
-                'pr_approval_limit' => $request->approval_limit,
-                'pr_updated_at' => now(),
-                'pr_updated_by' => auth()->id(),
+                'can_approve_po' => $request->can_approve ?? false,
+                'approval_limit' => $request->approval_limit,
             ]);
 
             return back()->with('success', 'Role updated successfully.');
@@ -130,16 +127,16 @@ class ProjectRoleController extends Controller
         $role = $request->get('role');
 
         $users = ProjectRole::with('user')
-            ->where('pr_project_id', $projectId)
-            ->where('pr_role', $role)
-            ->where('pr_can_approve', true)
+            ->where('project_id', $projectId)
+            ->where('role_name', $role)
+            ->where('can_approve_po', true)
             ->get()
             ->map(function ($pr) {
                 return [
                     'id' => $pr->user->id,
                     'name' => $pr->user->name,
                     'email' => $pr->user->email,
-                    'approval_limit' => $pr->pr_approval_limit,
+                    'approval_limit' => $pr->approval_limit,
                 ];
             });
 

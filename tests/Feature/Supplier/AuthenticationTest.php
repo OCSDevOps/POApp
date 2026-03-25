@@ -3,13 +3,13 @@
 namespace Tests\Feature\Supplier;
 
 use App\Models\SupplierUser;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /** @test */
     public function supplier_can_register_and_is_redirected_to_verification_notice()

@@ -157,7 +157,7 @@ class SecurityController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $logs = $query->orderByDesc('audit_id')->paginate(50)->withQueryString();
+        $logs = $query->orderByDesc('id')->paginate(50)->withQueryString();
 
         $users = User::query()
             ->orderBy('name')

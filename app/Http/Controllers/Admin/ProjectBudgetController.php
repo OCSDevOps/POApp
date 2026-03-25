@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Project;
-use App\Models\CostCode;
 use App\Models\Budget;
+use App\Models\CostCode;
+use App\Models\CostCodeTemplate;
+use App\Models\Project;
 use App\Models\ProjectCostCode;
 use App\Services\BudgetService;
 use Illuminate\Http\Request;
@@ -30,6 +31,10 @@ class ProjectBudgetController extends Controller
         
         // Get all active cost codes grouped by hierarchy
         $parentCodes = CostCode::parents()->active()->orderBy('cc_parent_code')->get();
+        $templates = CostCodeTemplate::active()
+            ->withCount('items')
+            ->orderBy('cct_name')
+            ->get();
         
         // Get currently assigned cost codes
         $assignedCostCodeIds = ProjectCostCode::byProject($projectId)
@@ -40,6 +45,7 @@ class ProjectBudgetController extends Controller
         return view('admin.budgets.assign-cost-codes', compact(
             'project',
             'parentCodes',
+            'templates',
             'assignedCostCodeIds'
         ));
     }
@@ -95,10 +101,10 @@ class ProjectBudgetController extends Controller
             });
         
         // Get existing budgets for this project
-        $existingBudgets = Budget::where('budget_project_ms', $projectId)
+        $existingBudgets = Budget::where('budget_project_id', $projectId)
             ->with('costCode')
             ->get()
-            ->keyBy('budget_cc_ms');
+            ->keyBy('budget_cost_code_id');
         
         return view('admin.budgets.setup', compact(
             'project',
@@ -193,8 +199,8 @@ class ProjectBudgetController extends Controller
      */
     public function getBudgetDetails($projectId, $costCodeId)
     {
-        $budget = Budget::where('budget_project_ms', $projectId)
-            ->where('budget_cc_ms', $costCodeId)
+        $budget = Budget::where('budget_project_id', $projectId)
+            ->where('budget_cost_code_id', $costCodeId)
             ->with(['costCode', 'project'])
             ->first();
         
@@ -235,8 +241,8 @@ class ProjectBudgetController extends Controller
         );
 
         // Calculate warning thresholds
-        $budget = Budget::where('budget_project_ms', $projectId)
-            ->where('budget_cc_ms', $request->cost_code_id)
+        $budget = Budget::where('budget_project_id', $projectId)
+            ->where('budget_cost_code_id', $request->cost_code_id)
             ->first();
 
         $response = [

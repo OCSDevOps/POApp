@@ -13,6 +13,30 @@ return new class extends Migration
     {
         if (Schema::hasTable('users')) {
             Schema::table('users', function (Blueprint $table) {
+                if (!Schema::hasColumn('users', 'username')) {
+                    $table->string('username')->nullable()->unique()->after('name');
+                }
+
+                if (!Schema::hasColumn('users', 'company_id')) {
+                    $table->unsignedBigInteger('company_id')->nullable()->after('email');
+                    $table->index('company_id');
+                }
+
+                if (!Schema::hasColumn('users', 'u_type')) {
+                    $table->tinyInteger('u_type')->default(0)->after('company_id');
+                    $table->index('u_type');
+                }
+
+                if (!Schema::hasColumn('users', 'u_status')) {
+                    $table->tinyInteger('u_status')->default(1)->after('u_type');
+                    $table->index('u_status');
+                }
+
+                if (!Schema::hasColumn('users', 'pt_id')) {
+                    $table->unsignedBigInteger('pt_id')->nullable()->after('u_status');
+                    $table->index('pt_id');
+                }
+
                 if (!Schema::hasColumn('users', 'two_factor_enabled')) {
                     $table->boolean('two_factor_enabled')->default(false);
                     $table->index('two_factor_enabled');

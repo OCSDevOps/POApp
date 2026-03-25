@@ -10,7 +10,7 @@ class AuditLog extends Model
     use HasFactory;
 
     protected $table = 'audit_logs';
-    protected $primaryKey = 'audit_id';
+    protected $primaryKey = 'id';
     public $timestamps = false;
 
     protected $fillable = [

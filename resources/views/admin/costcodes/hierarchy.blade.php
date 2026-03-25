@@ -75,7 +75,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h1 class="h3 mb-1"><i class="fas fa-sitemap"></i> Cost Code Hierarchy</h1>
-                    <p class="text-muted mb-0">Manage hierarchical cost code structure (XX-XX-XX format)</p>
+                    <p class="text-muted mb-0">Manage standard cost codes in the March 2020 `1-00-00 / 2-03-00 / 2-03-30` format.</p>
                 </div>
                 <a href="{{ route('admin.costcodes.index') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-list"></i> Flat View
@@ -98,8 +98,18 @@
         </div>
     @endif
 
+    @if($errors->any())
+        <div class="alert alert-danger">
+            <div class="fw-semibold mb-1">Please fix the highlighted hierarchy values.</div>
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="row">
-        <!-- Hierarchy Tree -->
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
@@ -108,7 +118,7 @@
                 <div class="card-body">
                     @if(empty($hierarchy))
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> No cost codes found. Create your first hierarchical cost code using the form.
+                            <i class="fas fa-info-circle"></i> No cost codes found. Create your first standard hierarchy code using the form.
                         </div>
                     @else
                         <ul class="hierarchy-tree">
@@ -121,78 +131,77 @@
             </div>
         </div>
 
-        <!-- Add Cost Code Form -->
         <div class="col-md-4">
             <div class="code-form-wrapper">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-plus-circle"></i> Add Cost Code</h5>
+                        <h5 class="mb-0" id="form_title"><i class="fas fa-plus-circle"></i> Add Cost Code</h5>
                     </div>
                     <div class="card-body">
                         <form action="{{ route('admin.costcodes.store-hierarchical') }}" method="POST" id="hierarchyForm">
                             @csrf
+                            <input type="hidden" name="_method" id="method_override" value="PUT" disabled>
+                            <input type="hidden" id="create_action" value="{{ route('admin.costcodes.store-hierarchical') }}">
+                            <input type="hidden" id="update_base" value="{{ url('/admincontrol/costcodes/hierarchical') }}">
 
                             <div class="mb-3">
-                                <label for="category_code" class="form-label">Category Code <span class="text-danger">*</span></label>
-                                <input type="text" name="category_code" id="category_code" 
-                                       class="form-control" maxlength="10" required
-                                       placeholder="e.g., 01, 02, 03">
-                                <small class="text-muted">2-digit category identifier</small>
+                                <label for="level" class="form-label">Hierarchy Level <span class="text-danger">*</span></label>
+                                <select name="level" id="level" class="form-select" required>
+                                    <option value="1">Level 1: Section Header</option>
+                                    <option value="2">Level 2: Category</option>
+                                    <option value="3" selected>Level 3: Detail</option>
+                                </select>
+                                <small class="text-muted">Use the attached standard list as the reference for new sections, categories, and detail codes.</small>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="subcategory_code" class="form-label">Subcategory Code</label>
-                                <input type="text" name="subcategory_code" id="subcategory_code" 
-                                       class="form-control" maxlength="10"
-                                       placeholder="e.g., 10, 20, 30">
-                                <small class="text-muted">Optional: 2-digit subcategory (creates XX-XX)</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="detail_code" class="form-label">Detail Code</label>
-                                <input type="text" name="detail_code" id="detail_code" 
-                                       class="form-control" maxlength="10"
-                                       placeholder="e.g., 01, 02, 03">
-                                <small class="text-muted">Optional: 2-digit detail (creates XX-XX-XX)</small>
+                            <div class="row">
+                                <div class="col-4 mb-3">
+                                    <label for="segment_1" class="form-label">Segment 1 <span class="text-danger">*</span></label>
+                                    <input type="text" name="segment_1" id="segment_1" class="form-control" maxlength="2" required placeholder="2">
+                                </div>
+                                <div class="col-4 mb-3">
+                                    <label for="segment_2" class="form-label">Segment 2</label>
+                                    <input type="text" name="segment_2" id="segment_2" class="form-control" maxlength="2" placeholder="03">
+                                </div>
+                                <div class="col-4 mb-3">
+                                    <label for="segment_3" class="form-label">Segment 3</label>
+                                    <input type="text" name="segment_3" id="segment_3" class="form-control" maxlength="2" placeholder="30">
+                                </div>
                             </div>
 
                             <div class="mb-3">
                                 <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
-                                <input type="text" name="description" id="description" 
-                                       class="form-control" maxlength="500" required
-                                       placeholder="e.g., General Conditions">
+                                <input type="text" name="description" id="description" class="form-control" maxlength="500" required placeholder="Concrete Supply">
                             </div>
 
                             <div class="mb-3">
-                                <label for="parent_code" class="form-label">Parent Code</label>
-                                <select name="parent_code" id="parent_code" class="form-select">
-                                    <option value="">None (Root Level)</option>
-                                    @foreach($rootCodes as $code)
-                                        <option value="{{ $code->full_code }}">{{ $code->full_code }} - {{ $code->cc_description }}</option>
-                                        @foreach($code->children as $child)
-                                            <option value="{{ $child->full_code }}">&nbsp;&nbsp;{{ $child->full_code }} - {{ $child->cc_description }}</option>
-                                        @endforeach
-                                    @endforeach
+                                <label for="cc_status" class="form-label">Status</label>
+                                <select name="cc_status" id="cc_status" class="form-select">
+                                    <option value="1" selected>Active</option>
+                                    <option value="0">Inactive</option>
                                 </select>
-                                <small class="text-muted">Optional: Select parent for nesting</small>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Preview</label>
                                 <div class="p-2 bg-light border rounded">
                                     <strong>Full Code:</strong> <span id="code_preview" class="code-badge">--</span><br>
-                                    <strong>Level:</strong> <span id="level_preview">1 (Category)</span>
+                                    <strong>Level:</strong> <span id="level_preview">3 (Detail)</span>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-save"></i> Add Cost Code
-                            </button>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary" id="submit_button">
+                                    <i class="fas fa-save"></i> Add Cost Code
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary d-none" id="cancel_edit_button">
+                                    Cancel Edit
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
 
-                <!-- Legend -->
                 <div class="card mt-3">
                     <div class="card-header bg-light">
                         <h6 class="mb-0"><i class="fas fa-info-circle"></i> Structure Guide</h6>
@@ -201,15 +210,15 @@
                         <table class="table table-sm table-borderless mb-0">
                             <tbody>
                                 <tr>
-                                    <td><span class="code-badge bg-primary text-white">01</span></td>
-                                    <td>Category (Level 1)</td>
+                                    <td><span class="code-badge bg-primary text-white">2-00-00</span></td>
+                                    <td>Section header (Level 1)</td>
                                 </tr>
                                 <tr>
-                                    <td><span class="code-badge bg-info text-white">01-10</span></td>
-                                    <td>Subcategory (Level 2)</td>
+                                    <td><span class="code-badge bg-info text-white">2-03-00</span></td>
+                                    <td>Category (Level 2)</td>
                                 </tr>
                                 <tr>
-                                    <td><span class="code-badge bg-success text-white">01-10-01</span></td>
+                                    <td><span class="code-badge bg-success text-white">2-03-30</span></td>
                                     <td>Detail (Level 3)</td>
                                 </tr>
                             </tbody>
@@ -217,26 +226,28 @@
                     </div>
                 </div>
 
-                <!-- Common Examples -->
                 <div class="card mt-3">
                     <div class="card-header bg-light">
-                        <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Common Examples</h6>
+                        <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Standard Sections</h6>
                     </div>
                     <div class="card-body p-2">
                         <div class="small">
-                            <div class="mb-2">
-                                <strong>01</strong> - General Conditions<br>
-                                <strong>02</strong> - Site Construction<br>
-                                <strong>03</strong> - Concrete<br>
-                                <strong>04</strong> - Masonry<br>
-                                <strong>05</strong> - Metals<br>
-                                <strong>06</strong> - Wood & Plastics
-                            </div>
-                            <div class="mb-2">
-                                <strong>03-10</strong> - Concrete Forming<br>
-                                <strong>03-20</strong> - Concrete Reinforcing<br>
-                                <strong>03-30</strong> - Cast-In-Place Concrete
-                            </div>
+                            @foreach($standardSections as $section)
+                                <div><strong>{{ $section['code'] }}</strong> - {{ $section['description'] }}</div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Standard Detail Examples</h6>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="small">
+                            @foreach($standardExamples as $example)
+                                <div><strong>{{ $example['code'] }}</strong> - {{ $example['description'] }}</div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -249,33 +260,64 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Live preview of full code
+    const createAction = $('#create_action').val();
+    const updateBase = $('#update_base').val();
+
+    function levelText(level) {
+        if (level === 1) {
+            return '1 (Section Header)';
+        }
+        if (level === 2) {
+            return '2 (Category)';
+        }
+        return '3 (Detail)';
+    }
+
+    function sanitizeSegment(value) {
+        return (value || '').toString().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2);
+    }
+
+    function previewSegment(value, fallback) {
+        const cleaned = sanitizeSegment(value);
+        if (!cleaned) {
+            return fallback;
+        }
+        return cleaned.length === 1 ? cleaned : cleaned.padStart(2, '0');
+    }
+
+    function setSegmentState(level) {
+        const segment2 = $('#segment_2');
+        const segment3 = $('#segment_3');
+
+        segment2.prop('readonly', level === 1);
+        segment3.prop('readonly', level !== 3);
+
+        if (level === 1) {
+            segment2.val('00');
+            segment3.val('00');
+        } else if (level === 2) {
+            if (segment2.val() === '00') {
+                segment2.val('');
+            }
+            segment3.val('00');
+        } else {
+            if (segment3.val() === '00') {
+                segment3.val('');
+            }
+        }
+    }
+
     function updatePreview() {
-        const category = $('#category_code').val() || '--';
-        const subcategory = $('#subcategory_code').val();
-        const detail = $('#detail_code').val();
+        const level = parseInt($('#level').val(), 10) || 3;
+        const segment1 = sanitizeSegment($('#segment_1').val()) || '--';
+        const segment2 = level >= 2 ? previewSegment($('#segment_2').val(), '--') : '00';
+        const segment3 = level === 3 ? previewSegment($('#segment_3').val(), '--') : '00';
 
-        let fullCode = category;
-        let level = 1;
-        let levelText = '1 (Category)';
+        $('#code_preview')
+            .text(`${segment1}-${segment2}-${segment3}`)
+            .removeClass('bg-primary bg-info bg-success text-white');
+        $('#level_preview').text(levelText(level));
 
-        if (subcategory) {
-            fullCode += '-' + subcategory;
-            level = 2;
-            levelText = '2 (Subcategory)';
-        }
-
-        if (detail) {
-            fullCode += '-' + detail;
-            level = 3;
-            levelText = '3 (Detail)';
-        }
-
-        $('#code_preview').text(fullCode);
-        $('#level_preview').text(levelText);
-
-        // Update badge color
-        $('#code_preview').removeClass('bg-primary bg-info bg-success text-white');
         if (level === 1) {
             $('#code_preview').addClass('bg-primary text-white');
         } else if (level === 2) {
@@ -285,35 +327,88 @@ $(document).ready(function() {
         }
     }
 
-    $('#category_code, #subcategory_code, #detail_code').on('input', updatePreview);
+    function resetForm() {
+        $('#hierarchyForm').attr('action', createAction);
+        $('#method_override').prop('disabled', true);
+        $('#form_title').html('<i class="fas fa-plus-circle"></i> Add Cost Code');
+        $('#submit_button').html('<i class="fas fa-save"></i> Add Cost Code');
+        $('#cancel_edit_button').addClass('d-none');
+        $('#hierarchyForm')[0].reset();
+        $('#level').val('3');
+        $('#cc_status').val('1');
+        setSegmentState(3);
+        updatePreview();
+    }
 
-    // Toggle hierarchy children
+    $('#level').on('change', function() {
+        setSegmentState(parseInt(this.value, 10) || 3);
+        updatePreview();
+    });
+
+    $('#segment_1, #segment_2, #segment_3').on('input', function() {
+        this.value = sanitizeSegment(this.value);
+        updatePreview();
+    });
+
     $(document).on('click', '.toggle-children', function(e) {
         e.preventDefault();
         $(this).toggleClass('collapsed');
         $(this).closest('.hierarchy-item').next('ul').slideToggle(200);
     });
 
-    // Format codes to uppercase
-    $('#category_code, #subcategory_code, #detail_code').on('input', function() {
-        this.value = this.value.toUpperCase();
+    window.addChild = function(button) {
+        const currentLevel = parseInt(button.dataset.level, 10);
+        if (currentLevel >= 3) {
+            alert('Detail cost codes are already the lowest level in this hierarchy.');
+            return;
+        }
+
+        resetForm();
+
+        const nextLevel = currentLevel + 1;
+        $('#level').val(String(nextLevel));
+        setSegmentState(nextLevel);
+        $('#segment_1').val(button.dataset.segment1 || '');
+
+        if (nextLevel === 3) {
+            $('#segment_2').val(button.dataset.segment2 || '');
+        }
+
+        updatePreview();
+
+        $(nextLevel === 2 ? '#segment_2' : '#segment_3').focus();
+        $('html, body').animate({
+            scrollTop: $('#hierarchyForm').offset().top - 100
+        }, 500);
+    };
+
+    window.editCode = function(button) {
+        $('#hierarchyForm').attr('action', `${updateBase}/${button.dataset.id}`);
+        $('#method_override').prop('disabled', false);
+        $('#form_title').html('<i class="fas fa-edit"></i> Edit Cost Code');
+        $('#submit_button').html('<i class="fas fa-save"></i> Save Changes');
+        $('#cancel_edit_button').removeClass('d-none');
+
+        $('#level').val(button.dataset.level);
+        $('#segment_1').val(button.dataset.segment1 || '');
+        $('#segment_2').val(button.dataset.segment2 || '');
+        $('#segment_3').val(button.dataset.segment3 || '');
+        $('#description').val(button.dataset.description || '');
+        $('#cc_status').val(button.dataset.status || '1');
+
+        setSegmentState(parseInt(button.dataset.level, 10) || 3);
+        updatePreview();
+
+        $('html, body').animate({
+            scrollTop: $('#hierarchyForm').offset().top - 100
+        }, 500);
+    };
+
+    $('#cancel_edit_button').on('click', function() {
+        resetForm();
     });
 
-    // Validate subcategory requires category
-    $('#subcategory_code').on('blur', function() {
-        if ($(this).val() && !$('#category_code').val()) {
-            alert('Please enter a category code first.');
-            $(this).val('');
-        }
-    });
-
-    // Validate detail requires subcategory
-    $('#detail_code').on('blur', function() {
-        if ($(this).val() && !$('#subcategory_code').val()) {
-            alert('Please enter a subcategory code first.');
-            $(this).val('');
-        }
-    });
+    resetForm();
 });
 </script>
 @endpush

@@ -196,6 +196,7 @@
         <hr class="sidebar-divider my-0 bg-light opacity-25">
         
         <ul class="sidebar-nav">
+            {{-- Dashboard --}}
             <li class="nav-item">
                 <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                     <i class="fas fa-tachometer-alt"></i>
@@ -203,8 +204,9 @@
                 </a>
             </li>
 
+            {{-- ── PURCHASE ORDER MANAGEMENT ── --}}
             <hr class="sidebar-divider my-2 bg-light opacity-25">
-            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">PURCHASE ORDER MANAGEMENT</div></li>
+            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">PURCHASE ORDERS</div></li>
 
             <li class="nav-item">
                 <a href="{{ route('admin.porder.index') }}" class="nav-link {{ request()->routeIs('admin.porder.*') ? 'active' : '' }}">
@@ -243,6 +245,7 @@
                 </a>
             </li>
 
+            {{-- ── PROJECT MANAGEMENT ── --}}
             <hr class="sidebar-divider my-2 bg-light opacity-25">
             <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">PROJECT MANAGEMENT</div></li>
 
@@ -253,7 +256,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="{{ route('admin.budget.index') }}" class="nav-link {{ request()->routeIs('admin.budget.*', 'admin.budgets.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.budget.index') }}" class="nav-link {{ request()->routeIs('admin.budget.*', 'admin.budgets.*', 'admin.budget-change-orders.*') ? 'active' : '' }}">
                     <i class="fas fa-calculator"></i>
                     <span>Budget Management</span>
                 </a>
@@ -271,12 +274,6 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="{{ route('admin.costcodes.index') }}" class="nav-link {{ request()->routeIs('admin.costcodes.*') ? 'active' : '' }}">
-                    <i class="fas fa-code"></i>
-                    <span>Cost Codes</span>
-                </a>
-            </li>
-            <li class="nav-item">
                 <a href="{{ route('admin.approvals.dashboard') }}" class="nav-link {{ request()->routeIs('admin.approvals.*') ? 'active' : '' }}">
                     <i class="fas fa-check-circle"></i>
                     <span>Approvals</span>
@@ -288,42 +285,49 @@
                     <span>Approval Workflows</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.project-roles.index') }}" class="nav-link {{ request()->routeIs('admin.project-roles.*') ? 'active' : '' }}">
-                    <i class="fas fa-user-tag"></i>
-                    <span>Project Roles</span>
-                </a>
-            </li>
 
-            <hr class="sidebar-divider my-2 bg-light opacity-25">
-            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">SUBCONTRACTOR MANAGEMENT</div></li>
-
+            {{-- Subcontract Management (under Project Management) --}}
             <li class="nav-item">
-                <a href="{{ route('admin.contracts.index') }}" class="nav-link {{ request()->routeIs('admin.contracts.*') ? 'active' : '' }}">
+                <a class="nav-link {{ request()->routeIs('admin.contracts.*', 'admin.contract-change-orders.*', 'admin.compliance.*', 'admin.supplier-compliance.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#subcontractCollapse" role="button" aria-expanded="{{ request()->routeIs('admin.contracts.*', 'admin.contract-change-orders.*', 'admin.compliance.*', 'admin.supplier-compliance.*') ? 'true' : 'false' }}">
                     <i class="fas fa-file-signature"></i>
-                    <span>Contracts</span>
+                    <span>Subcontracts</span>
                 </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.contract-change-orders.index') }}" class="nav-link {{ request()->routeIs('admin.contract-change-orders.*') ? 'active' : '' }}">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>Contract Change Orders</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.compliance.dashboard') }}" class="nav-link {{ request()->routeIs('admin.compliance.*', 'admin.supplier-compliance.*') ? 'active' : '' }}">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>Compliance Tracker</span>
-                </a>
+                <div class="collapse {{ request()->routeIs('admin.contracts.*', 'admin.contract-change-orders.*', 'admin.compliance.*', 'admin.supplier-compliance.*') ? 'show' : '' }}" id="subcontractCollapse">
+                    <li class="nav-item">
+                        <a href="{{ route('admin.contracts.index') }}" class="nav-link {{ request()->routeIs('admin.contracts.*') ? 'active' : '' }}">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Contracts</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.contract-change-orders.index') }}" class="nav-link {{ request()->routeIs('admin.contract-change-orders.*') ? 'active' : '' }}">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>Change Orders</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.compliance.dashboard') }}" class="nav-link {{ request()->routeIs('admin.compliance.*', 'admin.supplier-compliance.*') ? 'active' : '' }}">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Compliance</span>
+                        </a>
+                    </li>
+                </div>
             </li>
 
+            {{-- ── INVENTORY MANAGEMENT ── --}}
             <hr class="sidebar-divider my-2 bg-light opacity-25">
-            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">INVENTORY & CATALOG</div></li>
+            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">INVENTORY MANAGEMENT</div></li>
 
             <li class="nav-item">
                 <a href="{{ route('admin.item.index') }}" class="nav-link {{ request()->routeIs('admin.item.*') ? 'active' : '' }}">
                     <i class="fas fa-boxes"></i>
-                    <span>Item Management</span>
+                    <span>Items</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.packages.index') }}" class="nav-link {{ request()->routeIs('admin.packages.*') ? 'active' : '' }}">
+                    <i class="fas fa-box"></i>
+                    <span>Item Packages</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -332,36 +336,15 @@
                     <span>Suppliers</span>
                 </a>
             </li>
+
+            {{-- ── EQUIPMENT ── --}}
+            <hr class="sidebar-divider my-2 bg-light opacity-25">
+            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">EQUIPMENT</div></li>
+
             <li class="nav-item">
                 <a href="{{ route('admin.equipment.index') }}" class="nav-link {{ request()->routeIs('admin.equipment.*') ? 'active' : '' }}">
                     <i class="fas fa-tools"></i>
                     <span>Equipment</span>
-                </a>
-            </li>
-
-            <hr class="sidebar-divider my-2 bg-light opacity-25">
-            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">INTEGRATIONS</div></li>
-
-            <li class="nav-item">
-                <a href="{{ route('admin.procore.index') }}" class="nav-link {{ request()->routeIs('admin.procore.*') ? 'active' : '' }}">
-                    <i class="fas fa-plug"></i>
-                    <span>Procore</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.integrations.index') }}" class="nav-link {{ request()->routeIs('admin.integrations.*') ? 'active' : '' }}">
-                    <i class="fas fa-link"></i>
-                    <span>Accounting</span>
-                </a>
-            </li>
-
-            <hr class="sidebar-divider my-2 bg-light opacity-25">
-            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">REPORTS & SETTINGS</div></li>
-
-            <li class="nav-item">
-                <a href="{{ route('admin.reports.budget-vs-actual') }}" class="nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Reports</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -370,16 +353,44 @@
                     <span>Checklists</span>
                 </a>
             </li>
+
+            {{-- ── REPORTS ── --}}
+            <hr class="sidebar-divider my-2 bg-light opacity-25">
+            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">REPORTS</div></li>
+
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('admin.uom.*', 'admin.taxgroups.*', 'admin.packages.*', 'admin.permissions.*', 'admin.company.*', 'admin.security.*', 'admin.ai-settings.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#settingsCollapse" role="button" aria-expanded="{{ request()->routeIs('admin.uom.*', 'admin.taxgroups.*', 'admin.packages.*', 'admin.permissions.*', 'admin.company.*', 'admin.security.*', 'admin.ai-settings.*') ? 'true' : 'false' }}">
+                <a href="{{ route('admin.reports.budget-vs-actual') }}" class="nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+
+            {{-- ── SETTINGS (accordion) ── --}}
+            <hr class="sidebar-divider my-2 bg-light opacity-25">
+            <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">CONFIGURATION</div></li>
+
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.costcodes.*', 'admin.costcode-templates.*', 'admin.uom.*', 'admin.taxgroups.*', 'admin.permissions.*', 'admin.company.*', 'admin.security.*', 'admin.ai-settings.*', 'admin.procore.*', 'admin.integrations.*', 'admin.project-roles.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#settingsCollapse" role="button" aria-expanded="{{ request()->routeIs('admin.costcodes.*', 'admin.costcode-templates.*', 'admin.uom.*', 'admin.taxgroups.*', 'admin.permissions.*', 'admin.company.*', 'admin.security.*', 'admin.ai-settings.*', 'admin.procore.*', 'admin.integrations.*', 'admin.project-roles.*') ? 'true' : 'false' }}">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
-                <div class="collapse {{ request()->routeIs('admin.uom.*', 'admin.taxgroups.*', 'admin.packages.*', 'admin.permissions.*', 'admin.company.*', 'admin.security.*', 'admin.ai-settings.*') ? 'show' : '' }}" id="settingsCollapse">
+                <div class="collapse {{ request()->routeIs('admin.costcodes.*', 'admin.costcode-templates.*', 'admin.uom.*', 'admin.taxgroups.*', 'admin.permissions.*', 'admin.company.*', 'admin.security.*', 'admin.ai-settings.*', 'admin.procore.*', 'admin.integrations.*', 'admin.project-roles.*') ? 'show' : '' }}" id="settingsCollapse">
                     <li class="nav-item">
                         <a href="{{ route('admin.company.index') }}" class="nav-link {{ request()->routeIs('admin.company.*') ? 'active' : '' }}">
                             <i class="fas fa-building"></i>
                             <span>Company Profile</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.costcodes.index') }}" class="nav-link {{ request()->routeIs('admin.costcodes.*') ? 'active' : '' }}">
+                            <i class="fas fa-code"></i>
+                            <span>Standard Cost Codes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.costcode-templates.index') }}" class="nav-link {{ request()->routeIs('admin.costcode-templates.*') ? 'active' : '' }}">
+                            <i class="fas fa-layer-group"></i>
+                            <span>Cost Code Templates</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -395,15 +406,33 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ route('admin.packages.index') }}" class="nav-link {{ request()->routeIs('admin.packages.*') ? 'active' : '' }}">
-                            <i class="fas fa-box"></i>
-                            <span>Item Packages</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a href="{{ route('admin.permissions.index') }}" class="nav-link {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
                             <i class="fas fa-shield-alt"></i>
                             <span>Permissions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.project-roles.index') }}" class="nav-link {{ request()->routeIs('admin.project-roles.*') ? 'active' : '' }}">
+                            <i class="fas fa-user-tag"></i>
+                            <span>Project Roles</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.approval-workflows.index') }}" class="nav-link {{ request()->routeIs('admin.approval-workflows.*') ? 'active' : '' }}">
+                            <i class="fas fa-sitemap"></i>
+                            <span>Approval Workflows</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.procore.index') }}" class="nav-link {{ request()->routeIs('admin.procore.*') ? 'active' : '' }}">
+                            <i class="fas fa-plug"></i>
+                            <span>Procore Integration</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.integrations.index') }}" class="nav-link {{ request()->routeIs('admin.integrations.*') ? 'active' : '' }}">
+                            <i class="fas fa-link"></i>
+                            <span>Accounting Integration</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -428,6 +457,8 @@
             </li>
 
             @if(session('u_type') == 1)
+                <hr class="sidebar-divider my-2 bg-light opacity-25">
+                <li class="nav-item"><div class="sidebar-heading text-light opacity-50 px-3 py-2" style="font-size: 0.75rem;">SUPER ADMIN</div></li>
                 <li class="nav-item">
                     <a href="{{ route('admin.companies.index') }}" class="nav-link {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}">
                         <i class="fas fa-building"></i>

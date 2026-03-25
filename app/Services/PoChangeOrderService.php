@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PoChangeOrder;
+use App\Models\Budget;
 use App\Models\PurchaseOrder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -86,22 +87,26 @@ class PoChangeOrderService
             // Update the PO
             $po = $poco->purchaseOrder;
             
-            if (!$po->porder_original_total) {
+            if ((float) ($po->porder_original_total ?? 0) === 0.0) {
                 $po->porder_original_total = $po->porder_total_amount;
             }
             
-            $po->porder_total_amount = $poco->new_total;
-            $po->porder_change_orders_total += $poco->poco_amount;
+            $po->porder_total_amount = (float) $poco->new_total;
+            $po->porder_change_orders_total = (float) ($po->porder_change_orders_total ?? 0) + (float) $poco->poco_amount;
             $po->save();
             
             // Update budget commitment if needed
             if ($poco->poco_amount != 0) {
+                $costCodeId = $this->resolvePoCostCode($po);
+
                 $budgetService = app(BudgetService::class);
-                $budgetService->updateBudgetCommitment(
-                    $po->porder_project_ms,
-                    $po->porder_cost_code,
-                    $poco->poco_amount
-                );
+                if ($costCodeId) {
+                    $budgetService->updateBudgetCommitment(
+                        $po->porder_project_ms,
+                        $costCodeId,
+                        $poco->poco_amount
+                    );
+                }
             }
             
             DB::commit();
@@ -148,15 +153,30 @@ class PoChangeOrderService
      */
     public function validatePoChangeOrder($poId, $changeAmount): array
     {
-        $po = PurchaseOrder::findOrFail($poId);
+        $po = PurchaseOrder::find($poId);
+        if (!$po) {
+            return [
+                'valid' => false,
+                'reason' => 'Purchase order not found',
+            ];
+        }
+
         $newTotal = $po->porder_total_amount + $changeAmount;
         
         if ($changeAmount > 0) {
+            $costCodeId = $this->resolvePoCostCode($po);
+            if (!$costCodeId) {
+                return [
+                    'valid' => false,
+                    'reason' => 'Unable to determine cost code for purchase order',
+                ];
+            }
+
             // Increase - check budget
             $budgetService = app(BudgetService::class);
             $validation = $budgetService->validatePoBudget(
                 $po->porder_project_ms,
-                $po->porder_cost_code,
+                $costCodeId,
                 $changeAmount // Only validate the increase amount
             );
             
@@ -175,5 +195,28 @@ class PoChangeOrderService
             'change_amount' => $changeAmount,
             'new_total' => $newTotal,
         ];
+    }
+
+    private function resolvePoCostCode(PurchaseOrder $po): ?int
+    {
+        if (!empty($po->porder_cost_code)) {
+            return (int) $po->porder_cost_code;
+        }
+
+        $itemCostCode = $po->items()
+            ->whereNotNull('po_detail_ccode')
+            ->value('po_detail_ccode');
+
+        if ($itemCostCode) {
+            return (int) $itemCostCode;
+        }
+
+        $budgetCostCodes = Budget::where('budget_project_id', $po->porder_project_ms)
+            ->pluck('budget_cost_code_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return $budgetCostCodes->count() === 1 ? (int) $budgetCostCodes->first() : null;
     }
 }

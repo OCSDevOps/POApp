@@ -52,6 +52,7 @@
                                         <option value="amount_change">Amount Change</option>
                                         <option value="item_change">Item Change</option>
                                         <option value="date_change">Date Change</option>
+                                        <option value="term_change">Terms Change</option>
                                         <option value="other">Other</option>
                                     </select>
                                 </div>

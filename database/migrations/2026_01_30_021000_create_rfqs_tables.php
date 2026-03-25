@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -63,10 +64,14 @@ return new class extends Migration
             $table->text('rfqq_notes')->nullable();
             $table->timestamp('rfqq_created_at')->nullable();
         });
+
+        DB::statement('DROP VIEW IF EXISTS `rfqs`');
+        DB::statement('CREATE VIEW `rfqs` AS SELECT * FROM `rfq_master`');
     }
 
     public function down(): void
     {
+        DB::statement('DROP VIEW IF EXISTS `rfqs`');
         Schema::dropIfExists('rfq_quotes');
         Schema::dropIfExists('rfq_suppliers');
         Schema::dropIfExists('rfq_items');

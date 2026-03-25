@@ -42,22 +42,7 @@ class ApprovalService
         try {
             DB::beginTransaction();
             
-            // Find applicable workflows - check project-specific first, then company-wide
-            $workflows = ApprovalWorkflow::byType($entityType)
-                ->active()
-                ->forAmount($amount)
-                ->where(function($query) use ($projectId) {
-                    $query->where('project_id', $projectId)
-                        ->orWhereNull('project_id');
-                })
-                ->orderBy('project_id', 'DESC') // Project-specific workflows take precedence
-                ->orderBy('approval_level')
-                ->get();
-            
-            // Remove duplicate levels if project workflow overrides company workflow
-            if ($workflows->count() > 0 && $workflows->first()->project_id) {
-                $workflows = $workflows->where('project_id', $projectId);
-            }
+            $workflows = $this->getApplicableWorkflows($entityType, (float) $amount, $projectId);
             
             if ($workflows->isEmpty()) {
                 // No approval required - auto-approve
@@ -114,6 +99,7 @@ class ApprovalService
             
             return [
                 'success' => true,
+                'auto_approved' => false,
                 'request' => $request,
                 'approvers' => $approvers,
                 'message' => 'Submitted for approval - Level 1 of ' . $workflows->count(),
@@ -203,14 +189,15 @@ class ApprovalService
                 throw new \Exception('Approval request is not in pending status');
             }
             
-            // Verify user can approve
-            $workflow = ApprovalWorkflow::byType($request->request_type)
-                ->active()
-                ->where('approval_level', $request->current_level)
-                ->forAmount($request->request_amount)
-                ->first();
-            
-            if (!$workflow || !$workflow->isApprover($userId)) {
+            $projectId = $this->getEntityProjectId($request->request_type, $request->entity_id);
+            $workflows = $this->getApplicableWorkflows(
+                $request->request_type,
+                (float) $request->request_amount,
+                $projectId
+            );
+            $workflow = $workflows->firstWhere('approval_level', $request->current_level);
+
+            if (!$workflow || !$this->userCanApproveWorkflow($workflow, $projectId, (float) $request->request_amount, $userId)) {
                 throw new \Exception('User is not authorized to approve this request');
             }
             
@@ -250,15 +237,20 @@ class ApprovalService
             $request->current_level++;
             $request->save();
             
-            // Find next level workflow
-            $nextWorkflow = ApprovalWorkflow::byType($request->request_type)
-                ->active()
-                ->where('approval_level', $request->current_level)
-                ->forAmount($request->request_amount)
-                ->first();
+            $projectId = $this->getEntityProjectId($request->request_type, $request->entity_id);
+            $workflows = $this->getApplicableWorkflows(
+                $request->request_type,
+                (float) $request->request_amount,
+                $projectId
+            );
+            $nextWorkflow = $workflows->firstWhere('approval_level', $request->current_level);
             
             if ($nextWorkflow) {
-                $approvers = $nextWorkflow->getApprovers();
+                $approvers = $this->resolveApproversFromWorkflow(
+                    $nextWorkflow,
+                    $projectId,
+                    (float) $request->request_amount
+                );
                 if ($approvers->isNotEmpty()) {
                     $request->current_approver_id = $this->extractUserId($approvers->first());
                     $request->save();
@@ -359,6 +351,59 @@ class ApprovalService
     private function autoApprove($entityType, $entityId, $userId): void
     {
         $this->executeApproval($entityType, $entityId, $userId);
+    }
+
+    /**
+     * Resolve all workflows that apply to an entity, amount, and project.
+     */
+    private function getApplicableWorkflows(string $entityType, float $amount, $projectId)
+    {
+        $query = ApprovalWorkflow::byType($entityType)
+            ->active()
+            ->forAmount($amount);
+
+        if ($projectId) {
+            $query->where(function ($workflowQuery) use ($projectId) {
+                $workflowQuery->where('project_id', $projectId)
+                    ->orWhereNull('project_id');
+            });
+        } else {
+            $query->whereNull('project_id');
+        }
+
+        $workflows = $query
+            ->orderByRaw('CASE WHEN project_id IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('approval_level')
+            ->get();
+
+        if ($projectId && $workflows->contains(fn ($workflow) => (int) $workflow->project_id === (int) $projectId)) {
+            $workflows = $workflows->where('project_id', $projectId)->values();
+        }
+
+        return $workflows->values();
+    }
+
+    /**
+     * Determine whether a specific user can approve a workflow step.
+     */
+    private function userCanApproveWorkflow(ApprovalWorkflow $workflow, $projectId, float $amount, int $userId): bool
+    {
+        return $this->resolveApproversFromWorkflow($workflow, $projectId, $amount)
+            ->contains(fn ($approver) => $this->extractUserId($approver) === $userId);
+    }
+
+    /**
+     * Resolve the project id for an approval entity.
+     */
+    private function getEntityProjectId(string $entityType, int $entityId): ?int
+    {
+        return match ($entityType) {
+            'budget' => Budget::find($entityId)?->budget_project_id,
+            'budget_co' => BudgetChangeOrder::find($entityId)?->project_id,
+            'po' => PurchaseOrder::find($entityId)?->porder_project_ms,
+            'po_co' => PoChangeOrder::find($entityId)?->purchaseOrder?->porder_project_ms,
+            default => null,
+        };
     }
 
     /**

@@ -13,7 +13,7 @@ use App\Models\CostCode;
 use App\Models\ProjectCostCode;
 use App\Models\Company;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 
 /**
@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Queue;
  */
 class BudgetChangeOrderWorkflowTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected BudgetService $budgetService;
     protected ApprovalService $approvalService;

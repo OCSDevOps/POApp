@@ -74,11 +74,7 @@ class ApprovalWorkflow extends Model
      */
     public function scopeForAmount($query, $amount)
     {
-        return $query->where('amount_threshold_min', '<=', $amount)
-            ->where(function ($q) use ($amount) {
-                $q->whereNull('amount_threshold_max')
-                  ->orWhere('amount_threshold_max', '>=', $amount);
-            });
+        return $query->where('amount_threshold_min', '<=', $amount);
     }
 
     /**

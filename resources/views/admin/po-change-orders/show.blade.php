@@ -44,7 +44,7 @@
                                 </button>
                             </form>
                         @endif
-                        <a href="{{ route('admin.porder.show', $changeOrder->poco_po_ms) }}" class="btn btn-secondary">
+                        <a href="{{ route('admin.porder.show', $changeOrder->purchaseOrder->porder_id) }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to PO
                         </a>
                     </div>
@@ -103,7 +103,7 @@
                                     </tr>
                                     <tr>
                                         <th>Approved Date:</th>
-                                        <td>{{ $changeOrder->poco_approved_at ? \Carbon\Carbon::parse($changeOrder->poco_approved_at)->format('m/d/Y g:i A') : 'N/A' }}</td>
+                                        <td>{{ $changeOrder->approved_at ? $changeOrder->approved_at->format('m/d/Y g:i A') : 'N/A' }}</td>
                                     </tr>
                                 @endif
                             </table>
@@ -111,13 +111,15 @@
                             <!-- Reason for Change -->
                             <div class="mt-3">
                                 <h6>Reason for Change:</h6>
-                                <p class="text-muted">{{ $changeOrder->poco_reason }}</p>
+                                <p class="text-muted">{{ $changeOrder->poco_description }}</p>
                             </div>
 
                             <!-- Additional Details -->
                             @if($changeOrder->poco_details)
                                 @php
-                                    $details = json_decode($changeOrder->poco_details, true);
+                                    $details = is_array($changeOrder->poco_details)
+                                        ? $changeOrder->poco_details
+                                        : json_decode($changeOrder->poco_details, true);
                                 @endphp
                                 <div class="mt-3">
                                     <h6>Additional Details:</h6>
@@ -146,13 +148,13 @@
                                 <div class="col-md-4">
                                     <div class="p-3 bg-light rounded">
                                         <small class="text-muted d-block">Previous PO Total</small>
-                                        <h4 class="mb-0">${{ number_format($changeOrder->poco_previous_total, 2) }}</h4>
+                                        <h4 class="mb-0">${{ number_format($changeOrder->previous_total, 2) }}</h4>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="p-3 rounded" style="background-color: #f0f9ff;">
                                         <small class="text-muted d-block">New PO Total</small>
-                                        <h4 class="mb-0">${{ number_format($changeOrder->poco_new_total, 2) }}</h4>
+                                        <h4 class="mb-0">${{ number_format($changeOrder->new_total, 2) }}</h4>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -210,28 +212,36 @@
                             <div class="card-body">
                                 <div class="approval-timeline">
                                     @foreach($approvalHistory as $approval)
+                                        @php
+                                            $action = data_get($approval, 'action', data_get($approval, 'apah_action', 'pending'));
+                                            $userName = data_get($approval, 'user_name', data_get($approval, 'user.name', 'Unknown'));
+                                            $timestamp = data_get($approval, 'timestamp', data_get($approval, 'apah_timestamp'));
+                                            $comments = data_get($approval, 'comments', data_get($approval, 'apah_comments'));
+                                        @endphp
                                         <div class="timeline-item">
                                             <div class="timeline-marker 
-                                                @if($approval->apah_action == 'approved') bg-success
-                                                @elseif($approval->apah_action == 'rejected') bg-danger
+                                                @if($action == 'approved') bg-success
+                                                @elseif($action == 'rejected') bg-danger
                                                 @else bg-warning
                                                 @endif">
                                             </div>
                                             <div class="timeline-content">
                                                 <div class="d-flex justify-content-between align-items-start">
                                                     <div>
-                                                        <strong>{{ $approval->user->name }}</strong>
-                                                        <span class="badge bg-{{ $approval->apah_action == 'approved' ? 'success' : ($approval->apah_action == 'rejected' ? 'danger' : 'warning') }} ms-2">
-                                                            {{ ucfirst($approval->apah_action) }}
+                                                        <strong>{{ $userName }}</strong>
+                                                        <span class="badge bg-{{ $action == 'approved' ? 'success' : ($action == 'rejected' ? 'danger' : 'warning') }} ms-2">
+                                                            {{ ucfirst($action) }}
                                                         </span>
-                                                        <div class="text-muted small">
-                                                            {{ \Carbon\Carbon::parse($approval->apah_timestamp)->format('m/d/Y g:i A') }}
-                                                        </div>
+                                                        @if($timestamp)
+                                                            <div class="text-muted small">
+                                                                {{ \Carbon\Carbon::parse($timestamp)->format('m/d/Y g:i A') }}
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                 </div>
-                                                @if($approval->apah_comments)
+                                                @if($comments)
                                                     <div class="mt-2">
-                                                        <small class="text-muted">{{ $approval->apah_comments }}</small>
+                                                        <small class="text-muted">{{ $comments }}</small>
                                                     </div>
                                                 @endif
                                             </div>
@@ -243,7 +253,7 @@
                                 @if($changeOrder->poco_status == 'pending_approval' && $canApprove)
                                     <div class="mt-4 p-3 bg-light rounded">
                                         <h6>Your Approval Action:</h6>
-                                        <form method="POST" action="{{ route('admin.approvals.approve', $changeOrder->approvalRequest->apreq_id) }}" class="mb-2">
+                                        <form method="POST" action="{{ route('admin.po-change-orders.approve', $changeOrder->poco_id) }}" class="mb-2">
                                             @csrf
                                             <div class="mb-2">
                                                 <textarea name="comments" class="form-control" rows="2" 
@@ -253,7 +263,7 @@
                                                 <i class="fas fa-check"></i> Approve
                                             </button>
                                         </form>
-                                        <form method="POST" action="{{ route('admin.approvals.reject', $changeOrder->approvalRequest->apreq_id) }}">
+                                        <form method="POST" action="{{ route('admin.po-change-orders.reject', $changeOrder->poco_id) }}">
                                             @csrf
                                             <div class="mb-2">
                                                 <textarea name="comments" class="form-control" rows="2" 
